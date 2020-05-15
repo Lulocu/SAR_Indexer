@@ -50,6 +50,7 @@ class SAR_Project:
         self.show_snippet = False # valor por defecto, se cambia con self.set_snippet()
         self.use_stemming = False # valor por defecto, se cambia con self.set_stemming()
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
+        self.dates = {} # diccionario para saber las distintas fechas
 
         self.idDoc = 0
         self.idNew = 0
@@ -187,22 +188,31 @@ class SAR_Project:
         #################
         ### COMPLETAR ###
         #################
+        idNewAux = 0
         self.docs[self.idDoc] = filename
         for noticia in jlist:
             tokens = self.tokenize(noticia['article'])
             numToken = 0
             for token in tokens:
                 if self.index.get(token) == None:
-                    self.index[token] = [self.idDoc,self.idNew,[numToken]]
+                    self.index[token] = [self.idDoc,idNewAux,[numToken]]
                 else:
                     aux = self.index.get(token)
                     aux[2].append(numToken)
                     self.index[token] = aux
                 numToken += 1
+            self.news[self.idNew] = [noticia["title"],noticia["date"],noticia["keywords"]]
+
+            if self.dates.get(noticia["date"]) == None:
+                self.dates[noticia["date"]] = 1
+            else:
+                self.dates[noticia["date"]] = self.dates.get(noticia["date"]) + 1
+
             self.idNew += 1
         self.idDoc += 1
 
-        print(self.index)
+        #print(self.index)
+        print(self.dates)
 
 
 
@@ -251,18 +261,17 @@ class SAR_Project:
 
         """
         for token in self.index.keys():
-            permuterm = []
-            token = token + '$'
-            aux = token
+            aux = token + '$'
 
             for i in range(len(token)-1):
                 aux = aux[1:] + aux[0]
-                permuterm.append(aux)
 
-            self.ptindex[token] = permuterm
-
-        print(self.ptindex)
-
+                if self.ptindex.get(aux) == None:
+                    self.ptindex[aux] = [token]
+                else:
+                    aux2 = self.ptindex.get(aux)
+                    aux2.append(aux)
+                    self.ptindex[aux] = aux2
 
 
 
@@ -273,10 +282,16 @@ class SAR_Project:
         Muestra estadisticas de los indices
 
         """
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+
+        print("=" * 40)
+        print("Number of indexed days: " + str(len(self.dates)))
+        print("-" * 40)
+        print("Number of indexed news: " + str(len(self.news)))
+        print("-" * 40)
+        print("TOKENS: " + str(len(self.index)))
+        print("-" * 40)
+        print("Positional queries are NOT allowed.")
+        print("=" * 40)
 
 
 
@@ -337,10 +352,11 @@ class SAR_Project:
         return: posting list
 
         """
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+        self.get_permuterm(term)
+        self.get_stemming(term)
+
+        return self.index.get(term)
+
 
 
 
@@ -356,10 +372,7 @@ class SAR_Project:
         return: posting list
 
         """
-        pass
-        ########################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE POSICIONALES ##
-        ########################################################
+
 
 
     def get_stemming(self, term, field='article'):
@@ -376,10 +389,11 @@ class SAR_Project:
         """
 
         stem = self.stemmer.stem(term)
+        self.make_stemming()
 
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+        return self.sindex.get(stem)
+
+
 
 
     def get_permuterm(self, term, field='article'):
@@ -394,10 +408,15 @@ class SAR_Project:
         return: posting list
 
         """
+        aux = term + '$'
 
-        ##################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
-        ##################################################
+        for i in aux:
+            if aux[i] != '?' and aux[i] != '*':
+                aux = aux[1:] + aux[0]
+            else:
+                break
+
+        return self.ptindex.get(aux)
 
 
 
@@ -416,11 +435,14 @@ class SAR_Project:
         return: posting list con todos los newid exceptos los contenidos en p
 
         """
+        copiaDic = self.news
 
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+        for i in range(len(p)-1):
+            if copiaDic.get(p) != None:
+                copiaDic.pop(p)
+
+        return copiaDic.keys()
+
 
 
 
@@ -436,12 +458,21 @@ class SAR_Project:
         return: posting list con los newid incluidos en p1 y p2
 
         """
+        i = 0
+        j = 0
+        res = []
 
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
-
+        while i < len(p1) and j < len(p2):
+            if p1[i] == p2[j]:
+                res.append(p1[i])
+                i += 1
+                j += 1
+            else:
+                if p1[i] < p2[j]:
+                    i += 1
+                else:
+                    j += 1
+        return res
 
 
     def or_posting(self, p1, p2):
@@ -456,12 +487,25 @@ class SAR_Project:
         return: posting list con los newid incluidos de p1 o p2
 
         """
+        i = 0
+        j = 0
+        res = []
 
+        while i < len(p1) and j < len(p2):
+            if p1[i] == p2[j]:
+                i += 1
+                j += 1
+                res.append(p1[i])
+            else:
+                if p1[i] < p2[j]:
+                    res.append(p1[i])
+                     i += 1
+                else:
+                    res.append(p2[j])
+                    j += 1
 
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+            res.extend(p1[i:])
+            res.extend(p2[j:])
 
 
     def minus_posting(self, p1, p2):
@@ -477,13 +521,7 @@ class SAR_Project:
         return: posting list con los newid incluidos de p1 y no en p2
 
         """
-
-
-        pass
-        ########################################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES SI ES NECESARIO ##
-        ########################################################
-
+        return and_posting(p1,reverse_posting(p2))
 
 
 
