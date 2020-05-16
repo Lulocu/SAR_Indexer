@@ -306,7 +306,13 @@ class SAR_Project:
         return: posting list
 
         """
-        pass
+        
+        n = self.index
+        if term in n:
+            pList = n.get(term)
+            
+         return pList
+    
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
@@ -386,7 +392,16 @@ class SAR_Project:
 
         """
         
-        pass
+        pList = []
+        n = self.index
+        nKeys = n.keys()
+        for k in nKeys:
+            news = n[k][1]
+            if news not in p:
+                pList.append(news)
+                
+        return pList
+    
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
