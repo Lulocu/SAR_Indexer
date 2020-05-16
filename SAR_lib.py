@@ -188,17 +188,17 @@ class SAR_Project:
         #################
         ### COMPLETAR ###
         #################
-        idNewAux = 0
+
         self.docs[self.idDoc] = filename
         for noticia in jlist:
             tokens = self.tokenize(noticia['article'])
             numToken = 0
             for token in tokens:
                 if self.index.get(token) == None:
-                    self.index[token] = [self.idDoc,idNewAux,[numToken]]
+                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
                 else:
                     aux = self.index.get(token)
-                    aux[2].append(numToken)
+                    aux.append([self.idDoc,self.idNew,numToken])
                     self.index[token] = aux
                 numToken += 1
             self.news[self.idNew] = [noticia["title"],noticia["date"],noticia["keywords"]]
@@ -328,8 +328,47 @@ class SAR_Project:
         if query is None or len(query) == 0:
             return []
 
-        consulta = query.split()
-        
+        res = []
+        consultaPartes = query.split()
+        i = 0
+
+        if consultaPartes[0] == "AND" or consultaPartes[0] == "OR":
+            return []
+
+        if len(consultaPartes) == 1:
+            return self.get_posting(consultaPartes[0])
+
+        if len(consultaPartes) < 3:
+            if len(consultaPartes) == 2 and consultaPartes[0] == "NOT":
+                return self.reverse_posting(self.get_posting(consultaPartes[1]))
+            elif len(consultaPartes) == 2 and consultaPartes[1] != "NOT":
+                return self.get_posting(consultaPartes[0])
+            else:
+                return res
+        else:
+            while i < len(consultaPartes) - 1:
+                if consultaPartes[i] == "NOT":
+                    siguiente = self.get_posting(consultaPartes[i + 1])
+                    res = self.reverse_posting(siguiente)
+                    i += 1
+                else:
+                    if consultaPartes[i] == "AND":
+                        siguiente = self.get_posting(consultaPartes[i + 1])
+                        res = self.and_posting(res,siguiente)
+                        print(res)
+                        i += 1
+                    elif consultaPartes[i] == "OR":
+                        siguiente = self.get_posting(consultaPartes[i + 1])
+                        res = self.or_posting(res,siguiente)
+                        i += 1
+                    else:
+                        res = self.get_posting(consultaPartes[i])
+                        print(i)
+                        print(res)
+                i += 1
+            return res
+
+
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
@@ -357,9 +396,18 @@ class SAR_Project:
         if "*" in term or "?" in term:
             return self.get_permuterm(term)
 
-        self.get_stemming(term)
+        #self.get_stemming(term)
 
-        return self.index.get(term)
+        #VERSION BASICA
+        arrayIdNews = []
+
+        if self.index.get(term) != None:
+            postingList = self.index.get(term)
+            for elemento in postingList:
+                if elemento[1] not in arrayIdNews:
+                        arrayIdNews.append(elemento[1])
+
+        return arrayIdNews
 
 
 
@@ -439,11 +487,17 @@ class SAR_Project:
         return: posting list con todos los newid exceptos los contenidos en p
 
         """
-        copiaDic = self.news
 
-        for i in range(len(p)-1):
-            if copiaDic.get(p) != None:
-                copiaDic.pop(p)
+        copiaDic = self.news.copy()
+        claves = copiaDic.keys()
+        poped=[]
+
+        for i in p:
+            if i in claves:
+                poped.append(i)
+                copiaDic.pop(i)
+        print("LAS QUE SE HAN BORRADO SON:")
+        print(poped)
 
         return copiaDic.keys()
 
@@ -467,6 +521,7 @@ class SAR_Project:
         res = []
 
         while i < len(p1) and j < len(p2):
+
             if p1[i] == p2[j]:
                 res.append(p1[i])
                 i += 1
@@ -497,9 +552,9 @@ class SAR_Project:
 
         while i < len(p1) and j < len(p2):
             if p1[i] == p2[j]:
+                res.append(p1[i])
                 i += 1
                 j += 1
-                res.append(p1[i])
             else:
                 if p1[i] < p2[j]:
                     res.append(p1[i])
@@ -508,9 +563,13 @@ class SAR_Project:
                     res.append(p2[j])
                     j += 1
 
-            res.extend(p1[i:])
-            res.extend(p2[j:])
+        while i < len(p1):
+            res.append(p1[i])
+            i += 1
 
+        while j < len(p2):
+            res.append(p2[j])
+            j += 1
 
     def minus_posting(self, p1, p2):
         """
@@ -569,9 +628,9 @@ class SAR_Project:
 
         """
         result = self.solve_query(query)
+        print("QUERY = ", result)
         if self.use_ranking:
             result = self.rank_result(result, query)
-
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
