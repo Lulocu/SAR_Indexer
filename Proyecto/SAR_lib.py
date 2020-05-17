@@ -50,7 +50,25 @@ class SAR_Project:
         self.show_snippet = False # valor por defecto, se cambia con self.set_snippet()
         self.use_stemming = False # valor por defecto, se cambia con self.set_stemming()
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
-        self.dates = {} # diccionario para saber las distintas fechas
+
+        #######VARIABLES NUEVAS#######
+        self.title = {} # diccionario para almacenar los tokens de los titulos
+        self.dates = {} # diccionario para almacenar las fechas
+        self.keywords = {} # diccionario para almacenar los tokens de los keywords
+        self.article = {} # diccionario para almacenar los tokens de article
+        self.summary = {} # diccionario para almacenar los tokens de summary
+
+        self.pttitle = {} # diccionario para almacenar los tokens de los titulos
+        self.ptdates = {} # diccionario para almacenar las fechas
+        self.ptkeywords = {} # diccionario para almacenar los tokens de los keywords
+        self.ptarticle = {} # diccionario para almacenar los tokens de article
+        self.ptsummary = {} # diccionario para almacenar los tokens de summary
+
+        self.stitle = {} # diccionario para almacenar los tokens de los titulos
+        self.sdates = {} # diccionario para almacenar las fechas
+        self.skeywords = {} # diccionario para almacenar los tokens de los keywords
+        self.sarticle = {} # diccionario para almacenar los tokens de article
+        self.ssummary = {} # diccionario para almacenar los tokens de summary
 
         self.idDoc = 0
         self.idNew = 0
@@ -139,14 +157,14 @@ class SAR_Project:
         los argumentos adicionales "**args" solo son necesarios para las funcionalidades ampliadas
 
         """
-
+        print("ARGUMENTOS:" + str(args) )
         self.multifield = args['multifield']
         self.positional = args['positional']
         self.stemming = args['stem']
         self.permuterm = args['permuterm']
 
         for dir, subdirs, files in os.walk(root):
-            print("DIR:" + dir)
+            #print("DIR:" + dir)
             for filename in files:
                 if filename.endswith('.json'):
                     fullname = os.path.join(dir, filename)
@@ -172,7 +190,7 @@ class SAR_Project:
                 Una vez parseado con json.load tendremos una lista de diccionarios, cada diccionario se corresponde a una noticia
 
         """
-        print("Nombre fichero: " + filename)
+        #print("Nombre fichero: " + filename)
         with open(filename) as fh:
             jlist = json.load(fh)
 
@@ -182,80 +200,88 @@ class SAR_Project:
         #      "title", "date", "keywords", "article", "summary"
         #
         # En la version basica solo se debe indexar el contenido "article"
-        #
-        #
-        #
-        #################
-        ### COMPLETAR ###
-        #################
-
+        #print("SE VA A INTRODUCIR TODOS LOS TOKEN EN index")
         self.docs[self.idDoc] = filename
         for noticia in jlist:
             ##################ARTICLE################################################
             tokens = self.tokenize(noticia['article'])
             numToken = 0
             for token in tokens:
+                tokenAux = token
                 if self.index.get(token) == None:
                     self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                    self.article[tokenAux] = [[self.idDoc,self.idNew,numToken]]
                 else:
                     aux = self.index.get(token)
                     aux.append([self.idDoc,self.idNew,numToken])
                     self.index[token] = aux
+
+                    aux = self.article.get(tokenAux)
+                    aux.append([self.idDoc,self.idNew,numToken])
+                    self.article[tokenAux] = aux
                 numToken += 1
             self.news[self.idNew] = [noticia["title"],noticia["date"],noticia["keywords"],noticia["summary"]]
 
-            ##################TITLE################################################
-            tokensTitle = self.tokenize(noticia['title'])
-            numToken = 0
-            for token in tokensTitle:
-                token = "title:" + token
-                if self.index.get(token) == None:
-                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
-                else:
-                    aux = self.index.get(token)
-                    aux.append([self.idDoc,self.idNew,numToken])
-                    self.index[token] = aux
-                numToken += 1
+            if self.multifield == True:
+                ##################TITLE################################################
+                tokensTitle = self.tokenize(noticia['title'])
+                numToken = 0
+                for token in tokensTitle:
+                    tokenAux = token
+                    token = "title:" + token
 
-            ##################SUMMARY################################################
-            tokensSummary = self.tokenize(noticia['summary'])
-            numToken = 0
-            for token in tokensSummary:
-                token = "summary:" + token
-                if self.index.get(token) == None:
-                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
-                else:
-                    aux = self.index.get(token)
-                    aux.append([self.idDoc,self.idNew,numToken])
-                    self.index[token] = aux
-                numToken += 1
+                    if self.index.get(token) == None:
+                        self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                        self.title[tokenAux] = [[self.idDoc,self.idNew,numToken]]
+                    else:
+                        aux = self.index.get(token)
+                        aux.append([self.idDoc,self.idNew,numToken])
+                        self.index[token] = aux
 
-            ##################KEYWORDS################################################
-            tokensKeywords = self.tokenize(noticia['keywords'])
-            numToken = 0
-            for token in tokensKeywords:
-                token = "keywords:" + token
-                if self.index.get(token) == None:
-                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
-                else:
-                    aux = self.index.get(token)
-                    aux.append([self.idDoc,self.idNew,numToken])
-                    self.index[token] = aux
-                numToken += 1
+                        aux = self.title.get(tokenAux)
+                        aux.append([self.idDoc,self.idNew,numToken])
+                        self.title[tokenAux] = aux
+                    numToken += 1
+
+                ##################SUMMARY################################################
+                tokensSummary = self.tokenize(noticia['summary'])
+                numToken = 0
+                for token in tokensSummary:
+                    tokenAux = token
+                    token = "summary:" + token
+                    if self.index.get(token) == None:
+                        self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                        self.summary[tokenAux] = [[self.idDoc,self.idNew,numToken]]
+                    else:
+                        aux = self.index.get(token)
+                        aux.append([self.idDoc,self.idNew,numToken])
+                        self.index[token] = aux
+
+                        aux = self.summary.get(tokenAux)
+                        aux.append([self.idDoc,self.idNew,numToken])
+                        self.summary[tokenAux] = aux
+                    numToken += 1
+
+                ##################KEYWORDS################################################
+                tokensKeywords = self.tokenize(noticia['keywords'])
+                numToken = 0
+                for token in tokensKeywords:
+                    tokenAux = token
+                    token = "keywords:" + token
+                    if self.index.get(token) == None:
+                        self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                        self.keywords[tokenAux] = [[self.idDoc,self.idNew,numToken]]
+                    else:
+                        aux = self.index.get(token)
+                        aux.append([self.idDoc,self.idNew,numToken])
+                        self.index[token] = aux
+
+                        aux = self.keywords.get(tokenAux)
+                        aux.append([self.idDoc,self.idNew,numToken])
+                        self.keywords[tokenAux] = aux
+                    numToken += 1
 
             ##################DATE################################################
-            tokensDate = noticia['date']
-            numToken = 0
-            for token in tokensDate:
-                token = "date:" + token
-                if self.index.get(token) == None:
-                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
-                else:
-                    aux = self.index.get(token)
-                    aux.append([self.idDoc,self.idNew,numToken])
-                    self.index[token] = aux
-                numToken += 1
-
             if self.dates.get(noticia["date"]) == None:
                 self.dates[noticia["date"]] = 1
             else:
@@ -264,9 +290,10 @@ class SAR_Project:
             self.idNew += 1
         self.idDoc += 1
 
-
+        #print("SE VA A INTRODUCIR TODOS LOS TOKEN PERMUTERM EN ptindex")
+        #self.make_permuterm()
         #print(self.index)
-        #print(self.dates)
+        #print(len(self.title))
 
 
 
@@ -296,15 +323,64 @@ class SAR_Project:
         self.stemmer.stem(token) devuelve el stem del token
 
         """
-        for token in self.index.keys():
-            stem = self.stemmer.stem(token)
+        if(self.multifield != True):
+            for token in self.index.keys():
+                stem = self.stemmer.stem(token)
+                if self.sindex.get(stem) == None:
+                    self.sindex[stem] = [token]
+                else:
+                    aux = self.sindex.get(stem)
+                    aux.append(token)
+                    self.sindex[stem] = aux
+        else:
+            for token in self.title.keys():
+                stem = self.stemmer.stem(token)
+                if self.stitle.get(stem) == None:
+                    self.stitle[stem] = [token]
+                else:
+                    aux = self.stitle.get(stem)
+                    aux.append(token)
+                    self.stitle[stem] = aux
 
-            if self.sindex.get(stem) == None:
-                self.sindex[stem] == [token]
-            else:
-                aux = self.sindex.get(stem)
-                aux.append(token)
-                self.sindex[stem] = aux
+            for token in self.dates.keys():
+                stem = self.stemmer.stem(token)
+
+                if self.sdates.get(stem) == None:
+                    self.sdates[stem] = [token]
+                else:
+                    aux = self.sdates.get(stem)
+                    aux.append(token)
+                    self.sdates[stem] = aux
+
+            for token in self.keywords.keys():
+                stem = self.stemmer.stem(token)
+
+                if self.skeywords.get(stem) == None:
+                    self.skeywords[stem] = [token]
+                else:
+                    aux = self.skeywords.get(stem)
+                    aux.append(token)
+                    self.skeywords[stem] = aux
+
+            for token in self.article.keys():
+                stem = self.stemmer.stem(token)
+
+                if self.sarticle.get(stem) == None:
+                    self.sarticle[stem] = [token]
+                else:
+                    aux = self.sarticle.get(stem)
+                    aux.append(token)
+                    self.sarticle[stem] = aux
+
+            for token in self.summary.keys():
+                stem = self.stemmer.stem(token)
+
+                if self.ssummary.get(stem) == None:
+                    self.ssummary[stem] = [token]
+                else:
+                    aux = self.ssummary.get(stem)
+                    aux.append(token)
+                    self.ssummary[stem] = aux
 
 
 
@@ -315,10 +391,11 @@ class SAR_Project:
         Crea el indice permuterm (self.ptindex) para los terminos de todos los indices.
 
         """
+
         for token in self.index.keys():
             aux = token + '$'
 
-            for i in range(len(token)):
+            for i in range(len(aux)):
                 aux = aux[1:] + aux[0]
 
                 if self.ptindex.get(aux) == None:
@@ -327,6 +404,73 @@ class SAR_Project:
                     aux2 = self.ptindex.get(aux)
                     aux2.append(token)
                     self.ptindex[aux] = aux2
+
+        if self.permuterm == True:
+            for token in self.title.keys():
+                aux = token + '$'
+
+                for i in range(len(aux)):
+                    aux = aux[1:] + aux[0]
+
+                    if self.pttitle.get(aux) == None:
+                        self.pttitle[aux] = [token]
+                    else:
+                        aux2 = self.pttitle.get(aux)
+                        aux2.append(token)
+                        self.pttitle[aux] = aux2
+
+            for token in self.dates.keys():
+                aux = token + '$'
+
+                for i in range(len(aux)):
+                    aux = aux[1:] + aux[0]
+
+                    if self.ptdates.get(aux) == None:
+                        self.ptdates[aux] = [token]
+                    else:
+                        aux2 = self.ptdates.get(aux)
+                        aux2.append(token)
+                        self.ptdates[aux] = aux2
+
+            for token in self.keywords.keys():
+                aux = token + '$'
+
+                for i in range(len(aux)):
+                    aux = aux[1:] + aux[0]
+
+                    if self.ptkeywords.get(aux) == None:
+                        self.ptkeywords[aux] = [token]
+                    else:
+                        aux2 = self.ptkeywords.get(aux)
+                        aux2.append(token)
+                        self.ptkeywords[aux] = aux2
+
+            for token in self.article.keys():
+                aux = token + '$'
+
+                for i in range(len(aux)):
+                    aux = aux[1:] + aux[0]
+
+                    if self.ptarticle.get(aux) == None:
+                        self.ptarticle[aux] = [token]
+                    else:
+                        aux2 = self.ptarticle.get(aux)
+                        aux2.append(token)
+                        self.ptarticle[aux] = aux2
+
+            for token in self.summary.keys():
+                aux = token + '$'
+
+                for i in range(len(aux)):
+                    aux = aux[1:] + aux[0]
+
+                    if self.ptsummary.get(aux) == None:
+                        self.ptsummary[aux] = [token]
+                    else:
+                        aux2 = self.ptsummary.get(aux)
+                        aux2.append(token)
+                        self.ptsummary[aux] = aux2
+
 
 
 
@@ -337,24 +481,62 @@ class SAR_Project:
         Muestra estadisticas de los indices
 
         """
-
         print("=" * 40)
-        print("Number of indexed days: " + str(len(self.dates)))
-        print("-" * 40)
-        print("Number of indexed news: " + str(len(self.news)))
-        print("-" * 40)
-        print("TOKENS: " + str(len(self.index)))
-        print("-" * 40)
-        print("Positional queries are NOT allowed.")
+        if self.multifield == True:
+            print("Number of indexed days: " + str(len(self.dates)))
+            print("-" * 40)
+            print("Number of indexed news: " + str(len(self.news)))
+            print("-" * 40)
+            print("TOKENS:")
+            print("\t# tokens in 'title': " + str(len(self.title)))
+            print("\t# tokens in 'date': " + str(len(self.dates)))
+            print("\t# tokens in 'keywords': " + str(len(self.keywords)))
+            print("\t# tokens in 'article': " + str(len(self.article)))
+            print("\t# tokens in 'summary': " + str(len(self.summary)))
+            print("-" * 40)
+        else:
+            print("Number of indexed days: " + str(len(self.dates)))
+            print("-" * 40)
+            print("Number of indexed news: " + str(len(self.news)))
+            print("-" * 40)
+            print("TOKENS: " + str(len(self.index)))
+            print("-" * 40)
+            print("Positional queries are NOT allowed.")
+            print("-" * 40)
+
+        if self.permuterm == True:
+            self.make_permuterm()
+            if self.multifield == True:
+                print("PERMUTERMS:")
+                print("\t# permuterms in 'title': " + str(len(self.pttitle)))
+                print("\t# permuterms in 'date': " + str(len(self.ptdates)))
+                print("\t# permuterms in 'keywords': " + str(len(self.ptkeywords)))
+                print("\t# permuterms in 'article': " + str(len(self.ptarticle)))
+                print("\t# permuterms in 'summary': " + str(len(self.ptsummary)))
+                print("-" * 40)
+            else:
+                print("PERMUTERMS:" + str(len(self.ptindex)))
+                print("-" * 40)
+
+        if self.stemming == True:
+            self.make_stemming()
+            if self.multifield == True:
+                print("STEMS:")
+                print("\t# stems in 'title': " + str(len(self.stitle)))
+                print("\t# stems in 'date': " + str(len(self.sdates)))
+                print("\t# stems in 'keywords': " + str(len(self.skeywords)))
+                print("\t# stems in 'article': " + str(len(self.sarticle)))
+                print("\t# stems in 'summary': " + str(len(self.ssummary)))
+                print("-" * 40)
+            else:
+                print("STEMS:" + str(len(self.sindex)))
+                print("-" * 40)
+
+        if self.positional == True:
+            print("Positional queries are allowed.")
+        else:
+            print("Positional queries are NOT allowed.")
         print("=" * 40)
-
-
-
-
-
-
-
-
 
 
     ###################################
@@ -502,7 +684,7 @@ class SAR_Project:
         """
 
         stem = self.stemmer.stem(term)
-        self.make_stemming()
+        #self.make_stemming()
 
         return self.sindex.get(stem)
 
@@ -532,7 +714,7 @@ class SAR_Project:
                 break
         aux = aux[1:]
 
-        print(self.ptindex.get(aux))
+        #print(self.ptindex.get(aux))
         return self.ptindex.get(aux)
 
 
