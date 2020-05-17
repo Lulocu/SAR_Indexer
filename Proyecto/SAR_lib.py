@@ -7,7 +7,7 @@ import re
 class SAR_Project:
     """
     Prototipo de la clase para realizar la indexacion y la recuperacion de noticias
-        
+
         Preparada para todas las ampliaciones:
           parentesis + multiples indices + posicionales + stemming + permuterm + ranking de resultado
 
@@ -21,8 +21,8 @@ class SAR_Project:
     fields = [("title", True), ("date", False),
               ("keywords", True), ("article", True),
               ("summary", True)]
-    
-    
+
+
     # numero maximo de documento a mostrar cuando self.show_all es False
     SHOW_MAX = 10
 
@@ -33,7 +33,7 @@ class SAR_Project:
         NECESARIO PARA LA VERSION MINIMA
 
         Incluye todas las variables necesaria para todas las ampliaciones.
-        Puedes añadir más variables si las necesitas 
+        Puedes añadir más variables si las necesitas
 
         """
         self.index = {} # hash para el indice invertido de terminos --> clave: termino, valor: posting list.
@@ -50,7 +50,10 @@ class SAR_Project:
         self.show_snippet = False # valor por defecto, se cambia con self.set_snippet()
         self.use_stemming = False # valor por defecto, se cambia con self.set_stemming()
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
+        self.dates = {} # diccionario para saber las distintas fechas
 
+        self.idDoc = 0
+        self.idNew = 0
 
     ###############################
     ###                         ###
@@ -63,7 +66,7 @@ class SAR_Project:
         """
 
         Cambia el modo de mostrar los resultados.
-        
+
         input: "v" booleano.
 
         UTIL PARA TODAS LAS VERSIONES
@@ -78,7 +81,7 @@ class SAR_Project:
         """
 
         Cambia el modo de mostrar snippet.
-        
+
         input: "v" booleano.
 
         UTIL PARA TODAS LAS VERSIONES
@@ -93,7 +96,7 @@ class SAR_Project:
         """
 
         Cambia el modo de stemming por defecto.
-        
+
         input: "v" booleano.
 
         UTIL PARA LA VERSION CON STEMMING
@@ -108,7 +111,7 @@ class SAR_Project:
         """
 
         Cambia el modo de ranking por defecto.
-        
+
         input: "v" booleano.
 
         UTIL PARA LA VERSION CON RANKING DE NOTICIAS
@@ -131,7 +134,7 @@ class SAR_Project:
     def index_dir(self, root, **args):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-        
+
         Recorre recursivamente el directorio "root"  y indexa su contenido
         los argumentos adicionales "**args" solo son necesarios para las funcionalidades ampliadas
 
@@ -143,6 +146,7 @@ class SAR_Project:
         self.permuterm = args['permuterm']
 
         for dir, subdirs, files in os.walk(root):
+            print("DIR:" + dir)
             for filename in files:
                 if filename.endswith('.json'):
                     fullname = os.path.join(dir, filename)
@@ -151,7 +155,7 @@ class SAR_Project:
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
         ##########################################
-        
+
 
     def index_file(self, filename):
         """
@@ -168,7 +172,7 @@ class SAR_Project:
                 Una vez parseado con json.load tendremos una lista de diccionarios, cada diccionario se corresponde a una noticia
 
         """
-
+        print("Nombre fichero: " + filename)
         with open(filename) as fh:
             jlist = json.load(fh)
 
@@ -184,6 +188,86 @@ class SAR_Project:
         #################
         ### COMPLETAR ###
         #################
+
+        self.docs[self.idDoc] = filename
+        for noticia in jlist:
+            ##################ARTICLE################################################
+            tokens = self.tokenize(noticia['article'])
+            numToken = 0
+            for token in tokens:
+                if self.index.get(token) == None:
+                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                else:
+                    aux = self.index.get(token)
+                    aux.append([self.idDoc,self.idNew,numToken])
+                    self.index[token] = aux
+                numToken += 1
+            self.news[self.idNew] = [noticia["title"],noticia["date"],noticia["keywords"],noticia["summary"]]
+
+            ##################TITLE################################################
+            tokensTitle = self.tokenize(noticia['title'])
+            numToken = 0
+            for token in tokensTitle:
+                token = "title:" + token
+                if self.index.get(token) == None:
+                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                else:
+                    aux = self.index.get(token)
+                    aux.append([self.idDoc,self.idNew,numToken])
+                    self.index[token] = aux
+                numToken += 1
+
+            ##################SUMMARY################################################
+            tokensSummary = self.tokenize(noticia['summary'])
+            numToken = 0
+            for token in tokensSummary:
+                token = "summary:" + token
+                if self.index.get(token) == None:
+                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                else:
+                    aux = self.index.get(token)
+                    aux.append([self.idDoc,self.idNew,numToken])
+                    self.index[token] = aux
+                numToken += 1
+
+            ##################KEYWORDS################################################
+            tokensKeywords = self.tokenize(noticia['keywords'])
+            numToken = 0
+            for token in tokensKeywords:
+                token = "keywords:" + token
+                if self.index.get(token) == None:
+                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                else:
+                    aux = self.index.get(token)
+                    aux.append([self.idDoc,self.idNew,numToken])
+                    self.index[token] = aux
+                numToken += 1
+
+            ##################DATE################################################
+            tokensDate = noticia['date']
+            numToken = 0
+            for token in tokensDate:
+                token = "date:" + token
+                if self.index.get(token) == None:
+                    self.index[token] = [[self.idDoc,self.idNew,numToken]]
+                else:
+                    aux = self.index.get(token)
+                    aux.append([self.idDoc,self.idNew,numToken])
+                    self.index[token] = aux
+                numToken += 1
+
+            if self.dates.get(noticia["date"]) == None:
+                self.dates[noticia["date"]] = 1
+            else:
+                self.dates[noticia["date"]] = self.dates.get(noticia["date"]) + 1
+
+            self.idNew += 1
+        self.idDoc += 1
+
+
+        #print(self.index)
+        #print(self.dates)
+
 
 
 
@@ -212,14 +296,18 @@ class SAR_Project:
         self.stemmer.stem(token) devuelve el stem del token
 
         """
-        
-        pass
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+        for token in self.index.keys():
+            stem = self.stemmer.stem(token)
+
+            if self.sindex.get(stem) == None:
+                self.sindex[stem] == [token]
+            else:
+                aux = self.sindex.get(stem)
+                aux.append(token)
+                self.sindex[stem] = aux
 
 
-    
+
     def make_permuterm(self):
         """
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
@@ -227,27 +315,40 @@ class SAR_Project:
         Crea el indice permuterm (self.ptindex) para los terminos de todos los indices.
 
         """
-        pass
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+        for token in self.index.keys():
+            aux = token + '$'
 
+            for i in range(len(token)):
+                aux = aux[1:] + aux[0]
+
+                if self.ptindex.get(aux) == None:
+                    self.ptindex[aux] = [token]
+                else:
+                    aux2 = self.ptindex.get(aux)
+                    aux2.append(token)
+                    self.ptindex[aux] = aux2
 
 
 
     def show_stats(self):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-        
-        Muestra estadisticas de los indices
-        
-        """
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
 
-        
+        Muestra estadisticas de los indices
+
+        """
+
+        print("=" * 40)
+        print("Number of indexed days: " + str(len(self.dates)))
+        print("-" * 40)
+        print("Number of indexed news: " + str(len(self.news)))
+        print("-" * 40)
+        print("TOKENS: " + str(len(self.index)))
+        print("-" * 40)
+        print("Positional queries are NOT allowed.")
+        print("=" * 40)
+
+
 
 
 
@@ -282,18 +383,59 @@ class SAR_Project:
         if query is None or len(query) == 0:
             return []
 
+        res = []
+        consultaPartes = query.split()
+        i = 0
+
+        if consultaPartes[0] == "AND" or consultaPartes[0] == "OR":
+            return []
+
+        if len(consultaPartes) == 1:
+            return self.get_posting(consultaPartes[0])
+
+        if len(consultaPartes) < 3:
+            if len(consultaPartes) == 2 and consultaPartes[0] == "NOT":
+                return self.reverse_posting(self.get_posting(consultaPartes[1]))
+            elif len(consultaPartes) == 2 and consultaPartes[1] != "NOT":
+                return self.get_posting(consultaPartes[0])
+            else:
+                return res
+        else:
+            while i < len(consultaPartes) - 1:
+                if consultaPartes[i] == "NOT":
+                    siguiente = self.get_posting(consultaPartes[i + 1])
+                    res = self.reverse_posting(siguiente)
+                    i += 1
+                else:
+                    if consultaPartes[i] == "AND":
+                        siguiente = self.get_posting(consultaPartes[i + 1])
+                        res = self.and_posting(res,siguiente)
+                        print(res)
+                        i += 1
+                    elif consultaPartes[i] == "OR":
+                        siguiente = self.get_posting(consultaPartes[i + 1])
+                        res = self.or_posting(res,siguiente)
+                        i += 1
+                    else:
+                        res = self.get_posting(consultaPartes[i])
+                        print(i)
+                        print(res)
+                i += 1
+            return res
+
+
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
 
- 
+
 
 
     def get_posting(self, term, field='article'):
         """
         NECESARIO PARA TODAS LAS VERSIONES
 
-        Devuelve la posting list asociada a un termino. 
+        Devuelve la posting list asociada a un termino.
         Dependiendo de las ampliaciones implementadas "get_posting" puede llamar a:
             - self.get_positionals: para la ampliacion de posicionales
             - self.get_permuterm: para la ampliacion de permuterms
@@ -306,10 +448,28 @@ class SAR_Project:
         return: posting list
 
         """
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+        #print("HOLAAAAA")
+        #self.make_permuterm()
+        #print(self.ptindex)
+
+        if "*" in term or "?" in term:
+            print("HOLAAAA " + term)
+
+            return self.get_permuterm(term)
+
+        #self.get_stemming(term)
+
+        #VERSION BASICA
+        arrayIdNews = []
+
+        if self.index.get(term) != None:
+            postingList = self.index.get(term)
+            for elemento in postingList:
+                if elemento[1] not in arrayIdNews:
+                        arrayIdNews.append(elemento[1])
+
+        return arrayIdNews
+
 
 
 
@@ -325,10 +485,7 @@ class SAR_Project:
         return: posting list
 
         """
-        pass
-        ########################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE POSICIONALES ##
-        ########################################################
+
 
 
     def get_stemming(self, term, field='article'):
@@ -343,12 +500,13 @@ class SAR_Project:
         return: posting list
 
         """
-        
-        stem = self.stemmer.stem(term)
 
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+        stem = self.stemmer.stem(term)
+        self.make_stemming()
+
+        return self.sindex.get(stem)
+
+
 
 
     def get_permuterm(self, term, field='article'):
@@ -363,10 +521,19 @@ class SAR_Project:
         return: posting list
 
         """
+        aux = term + '$'
 
-        ##################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
-        ##################################################
+        i = 0
+        for i in range(len(aux)):
+            if aux[i] != '?' and aux[i] != '*':
+                aux = aux[1:] + aux[0]
+            else:
+                aux = aux[1:] + aux[0]
+                break
+        aux = aux[1:]
+
+        print(self.ptindex.get(aux))
+        return self.ptindex.get(aux)
 
 
 
@@ -385,11 +552,20 @@ class SAR_Project:
         return: posting list con todos los newid exceptos los contenidos en p
 
         """
-        
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+
+        copiaDic = self.news.copy()
+        claves = copiaDic.keys()
+        poped=[]
+
+        for i in p:
+            if i in claves:
+                poped.append(i)
+                copiaDic.pop(i)
+        print("LAS QUE SE HAN BORRADO SON:")
+        print(poped)
+
+        return copiaDic.keys()
+
 
 
 
@@ -405,12 +581,22 @@ class SAR_Project:
         return: posting list con los newid incluidos en p1 y p2
 
         """
-        
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+        i = 0
+        j = 0
+        res = []
 
+        while i < len(p1) and j < len(p2):
+
+            if p1[i] == p2[j]:
+                res.append(p1[i])
+                i += 1
+                j += 1
+            else:
+                if p1[i] < p2[j]:
+                    i += 1
+                else:
+                    j += 1
+        return res
 
 
     def or_posting(self, p1, p2):
@@ -425,13 +611,30 @@ class SAR_Project:
         return: posting list con los newid incluidos de p1 o p2
 
         """
+        i = 0
+        j = 0
+        res = []
 
-        
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+        while i < len(p1) and j < len(p2):
+            if p1[i] == p2[j]:
+                res.append(p1[i])
+                i += 1
+                j += 1
+            else:
+                if p1[i] < p2[j]:
+                    res.append(p1[i])
+                    i += 1
+                else:
+                    res.append(p2[j])
+                    j += 1
 
+        while i < len(p1):
+            res.append(p1[i])
+            i += 1
+
+        while j < len(p2):
+            res.append(p2[j])
+            j += 1
 
     def minus_posting(self, p1, p2):
         """
@@ -446,13 +649,7 @@ class SAR_Project:
         return: posting list con los newid incluidos de p1 y no en p2
 
         """
-
-        
-        pass
-        ########################################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES SI ES NECESARIO ##
-        ########################################################
-
+        return and_posting(p1,reverse_posting(p2))
 
 
 
@@ -468,7 +665,7 @@ class SAR_Project:
         """
         NECESARIO PARA TODAS LAS VERSIONES
 
-        Resuelve una consulta y la muestra junto al numero de resultados 
+        Resuelve una consulta y la muestra junto al numero de resultados
 
         param:  "query": query que se debe resolver.
 
@@ -493,15 +690,30 @@ class SAR_Project:
         param:  "query": query que se debe resolver.
 
         return: el numero de noticias recuperadas, para la opcion -T
-        
+
         """
         result = self.solve_query(query)
-        if self.use_ranking:
-            result = self.rank_result(result, query)   
 
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+        if self.use_ranking:
+            result = self.rank_result(result, query)
+
+        print("=" * 20)
+        print("Query: '" + query + "'")
+        print("Number of results: " + str(len(result)))
+
+        i = 1
+        for elemento in result:
+            postingList = self.news.get(elemento)
+            print("#" + str(i))
+            print("Score: " + str(0))
+            print("Date: " + postingList[1])
+            print("Title: " + postingList[0])
+            print("Keywords: " + postingList[2])
+            print("Summary: " + postingList[3])
+            print("-" * 10)
+            i += 1
+
+        print("=" * 20)
 
 
 
@@ -519,9 +731,8 @@ class SAR_Project:
         return: la lista de resultados ordenada
 
         """
+        return 0
 
-        pass
-        
         ###################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE RANKING ##
         ###################################################
