@@ -190,7 +190,7 @@ class SAR_Project:
                 Una vez parseado con json.load tendremos una lista de diccionarios, cada diccionario se corresponde a una noticia
 
         """
-        #print("Nombre fichero: " + filename)
+        print("Nombre fichero: " + filename)
         with open(filename) as fh:
             jlist = json.load(fh)
 
@@ -590,18 +590,27 @@ class SAR_Project:
                     i += 1
                 else:
                     if consultaPartes[i] == "AND":
-                        siguiente = self.get_posting(consultaPartes[i + 1])
-                        res = self.and_posting(res,siguiente)
-                        print(res)
-                        i += 1
+                        if consultaPartes[i+1] == "NOT":
+                            siguiente = self.reverse_posting(self.get_posting(consultaPartes[i + 2]))
+                            res = self.and_posting(res,siguiente)
+                            i += 2
+                        else:
+                            siguiente = self.get_posting(consultaPartes[i + 1])
+                            res = self.and_posting(res,siguiente)
+                            i += 1
                     elif consultaPartes[i] == "OR":
-                        siguiente = self.get_posting(consultaPartes[i + 1])
-                        res = self.or_posting(res,siguiente)
-                        i += 1
+                        if consultaPartes[i+1] == "NOT":
+                            siguiente = self.reverse_posting(self.get_posting(consultaPartes[i + 2]))
+                            res = self.or_posting(res,siguiente)
+                            i += 2
+                        else:
+                            siguiente = self.get_posting(consultaPartes[i + 1])
+                            res = self.or_posting(res,siguiente)
+                            i += 1
                     else:
                         res = self.get_posting(consultaPartes[i])
-                        print(i)
-                        print(res)
+                        #print(i)
+                        #print(res)
                 i += 1
             return res
 
@@ -636,14 +645,12 @@ class SAR_Project:
 
         if "*" in term or "?" in term:
             print("HOLAAAA " + term)
-
             return self.get_permuterm(term)
 
         #self.get_stemming(term)
 
         #VERSION BASICA
         arrayIdNews = []
-
         if self.index.get(term) != None:
             postingList = self.index.get(term)
             for elemento in postingList:
@@ -743,10 +750,10 @@ class SAR_Project:
             if i in claves:
                 poped.append(i)
                 copiaDic.pop(i)
-        print("LAS QUE SE HAN BORRADO SON:")
-        print(poped)
+        #print("LAS QUE SE HAN BORRADO SON:")
+        #print(poped)
 
-        return copiaDic.keys()
+        return list(copiaDic.keys())
 
 
 
@@ -818,6 +825,8 @@ class SAR_Project:
             res.append(p2[j])
             j += 1
 
+        return res
+
     def minus_posting(self, p1, p2):
         """
         OPCIONAL PARA TODAS LAS VERSIONES
@@ -855,6 +864,8 @@ class SAR_Project:
 
         """
         result = self.solve_query(query)
+        print("RESULTADO")
+        print(result)
         print("%s\t%d" % (query, len(result)))
         return len(result)  # para verificar los resultados (op: -T)
 
@@ -892,12 +903,31 @@ class SAR_Project:
             print("Title: " + postingList[0])
             print("Keywords: " + postingList[2])
             print("Summary: " + postingList[3])
+
             print("-" * 10)
             i += 1
 
         print("=" * 20)
 
+    def snippet(self, noticiaID, query):
 
+        path = self.docs[noticiaID]
+        miNoticia = self.news[noticiaID]
+        target = None
+        tokens = []
+
+        for token in query:
+            if token != 'AND' and token != 'OR' and token != 'NOT':
+                tokens.append(token)
+
+        with open(path) as fh:
+            jlist = json.load(fh)
+            for noticia in jlist:
+                if(noticia['title'] == miNoticia[0] and noticia['date'] == miNoticia):
+                    target = noticia
+                    break
+
+            #for termino
 
 
     def rank_result(self, result, query):
@@ -913,6 +943,7 @@ class SAR_Project:
         return: la lista de resultados ordenada
 
         """
+
         return 0
 
         ###################################################
