@@ -7,10 +7,8 @@ import re
 class SAR_Project:
     """
     Prototipo de la clase para realizar la indexacion y la recuperacion de noticias
-
         Preparada para todas las ampliaciones:
           parentesis + multiples indices + posicionales + stemming + permuterm + ranking de resultado
-
     Se deben completar los metodos que se indica.
     Se pueden añadir nuevas variables y nuevos metodos
     Los metodos que se añadan se deberan documentar en el codigo y explicar en la memoria
@@ -31,10 +29,8 @@ class SAR_Project:
         """
         Constructor de la classe SAR_Indexer.
         NECESARIO PARA LA VERSION MINIMA
-
         Incluye todas las variables necesaria para todas las ampliaciones.
         Puedes añadir más variables si las necesitas
-
         """
         self.index = {} # hash para el indice invertido de terminos --> clave: termino, valor: posting list.
                         # Si se hace la implementacion multifield, se pude hacer un segundo nivel de hashing de tal forma que:
@@ -82,60 +78,40 @@ class SAR_Project:
 
     def set_showall(self, v):
         """
-
         Cambia el modo de mostrar los resultados.
-
         input: "v" booleano.
-
         UTIL PARA TODAS LAS VERSIONES
-
         si self.show_all es True se mostraran todos los resultados el lugar de un maximo de self.SHOW_MAX, no aplicable a la opcion -C
-
         """
         self.show_all = v
 
 
     def set_snippet(self, v):
         """
-
         Cambia el modo de mostrar snippet.
-
         input: "v" booleano.
-
         UTIL PARA TODAS LAS VERSIONES
-
         si self.show_snippet es True se mostrara un snippet de cada noticia, no aplicable a la opcion -C
-
         """
         self.show_snippet = v
 
 
     def set_stemming(self, v):
         """
-
         Cambia el modo de stemming por defecto.
-
         input: "v" booleano.
-
         UTIL PARA LA VERSION CON STEMMING
-
         si self.use_stemming es True las consultas se resolveran aplicando stemming por defecto.
-
         """
         self.use_stemming = v
 
 
     def set_ranking(self, v):
         """
-
         Cambia el modo de ranking por defecto.
-
         input: "v" booleano.
-
         UTIL PARA LA VERSION CON RANKING DE NOTICIAS
-
         si self.use_ranking es True las consultas se mostraran ordenadas, no aplicable a la opcion -C
-
         """
         self.use_ranking = v
 
@@ -152,10 +128,8 @@ class SAR_Project:
     def index_dir(self, root, **args):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Recorre recursivamente el directorio "root"  y indexa su contenido
         los argumentos adicionales "**args" solo son necesarios para las funcionalidades ampliadas
-
         """
         print("ARGUMENTOS:" + str(args) )
         self.multifield = args['multifield']
@@ -178,19 +152,14 @@ class SAR_Project:
     def index_file(self, filename):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Indexa el contenido de un fichero.
-
         Para tokenizar la noticia se debe llamar a "self.tokenize"
-
         Dependiendo del valor de "self.multifield" y "self.positional" se debe ampliar el indexado.
         En estos casos, se recomienda crear nuevos metodos para hacer mas sencilla la implementacion
-
         input: "filename" es el nombre de un fichero en formato JSON Arrays (https://www.w3schools.com/js/js_json_arrays.asp).
                 Una vez parseado con json.load tendremos una lista de diccionarios, cada diccionario se corresponde a una noticia
-
         """
-        #print("Nombre fichero: " + filename)
+        print("Nombre fichero: " + filename)
         with open(filename) as fh:
             jlist = json.load(fh)
 
@@ -301,14 +270,10 @@ class SAR_Project:
     def tokenize(self, text):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Tokeniza la cadena "texto" eliminando simbolos no alfanumericos y dividientola por espacios.
         Puedes utilizar la expresion regular 'self.tokenizer'.
-
         params: 'text': texto a tokenizar
-
         return: lista de tokens
-
         """
         return self.tokenizer.sub(' ', text.lower()).split()
 
@@ -317,11 +282,8 @@ class SAR_Project:
     def make_stemming(self):
         """
         NECESARIO PARA LA AMPLIACION DE STEMMING.
-
         Crea el indice de stemming (self.sindex) para los terminos de todos los indices.
-
         self.stemmer.stem(token) devuelve el stem del token
-
         """
         if(self.multifield != True):
             for token in self.index.keys():
@@ -387,9 +349,7 @@ class SAR_Project:
     def make_permuterm(self):
         """
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
-
         Crea el indice permuterm (self.ptindex) para los terminos de todos los indices.
-
         """
 
         for token in self.index.keys():
@@ -477,9 +437,7 @@ class SAR_Project:
     def show_stats(self):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Muestra estadisticas de los indices
-
         """
         print("=" * 40)
         if self.multifield == True:
@@ -549,17 +507,11 @@ class SAR_Project:
     def solve_query(self, query, prev={}):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Resuelve una query.
         Debe realizar el parsing de consulta que sera mas o menos complicado en funcion de la ampliacion que se implementen
-
-
         param:  "query": cadena con la query
                 "prev": incluido por si se quiere hacer una version recursiva. No es necesario utilizarlo.
-
-
         return: posting list con el resultado de la query
-
         """
 
         if query is None or len(query) == 0:
@@ -590,18 +542,27 @@ class SAR_Project:
                     i += 1
                 else:
                     if consultaPartes[i] == "AND":
-                        siguiente = self.get_posting(consultaPartes[i + 1])
-                        res = self.and_posting(res,siguiente)
-                        print(res)
-                        i += 1
+                        if consultaPartes[i+1] == "NOT":
+                            siguiente = self.reverse_posting(self.get_posting(consultaPartes[i + 2]))
+                            res = self.and_posting(res,siguiente)
+                            i += 2
+                        else:
+                            siguiente = self.get_posting(consultaPartes[i + 1])
+                            res = self.and_posting(res,siguiente)
+                            i += 1
                     elif consultaPartes[i] == "OR":
-                        siguiente = self.get_posting(consultaPartes[i + 1])
-                        res = self.or_posting(res,siguiente)
-                        i += 1
+                        if consultaPartes[i+1] == "NOT":
+                            siguiente = self.reverse_posting(self.get_posting(consultaPartes[i + 2]))
+                            res = self.or_posting(res,siguiente)
+                            i += 2
+                        else:
+                            siguiente = self.get_posting(consultaPartes[i + 1])
+                            res = self.or_posting(res,siguiente)
+                            i += 1
                     else:
                         res = self.get_posting(consultaPartes[i])
-                        print(i)
-                        print(res)
+                        #print(i)
+                        #print(res)
                 i += 1
             return res
 
@@ -616,19 +577,14 @@ class SAR_Project:
     def get_posting(self, term, field='article'):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Devuelve la posting list asociada a un termino.
         Dependiendo de las ampliaciones implementadas "get_posting" puede llamar a:
             - self.get_positionals: para la ampliacion de posicionales
             - self.get_permuterm: para la ampliacion de permuterms
             - self.get_stemming: para la amplaicion de stemming
-
-
         param:  "term": termino del que se debe recuperar la posting list.
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
-
         return: posting list
-
         """
         #print("HOLAAAAA")
         #self.make_permuterm()
@@ -636,14 +592,12 @@ class SAR_Project:
 
         if "*" in term or "?" in term:
             print("HOLAAAA " + term)
-
             return self.get_permuterm(term)
 
         #self.get_stemming(term)
 
         #VERSION BASICA
         arrayIdNews = []
-
         if self.index.get(term) != None:
             postingList = self.index.get(term)
             for elemento in postingList:
@@ -658,14 +612,10 @@ class SAR_Project:
     def get_positionals(self, terms, field='article'):
         """
         NECESARIO PARA LA AMPLIACION DE POSICIONALES
-
         Devuelve la posting list asociada a una secuencia de terminos consecutivos.
-
         param:  "terms": lista con los terminos consecutivos para recuperar la posting list.
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
-
         return: posting list
-
         """
 
 
@@ -673,14 +623,10 @@ class SAR_Project:
     def get_stemming(self, term, field='article'):
         """
         NECESARIO PARA LA AMPLIACION DE STEMMING
-
         Devuelve la posting list asociada al stem de un termino.
-
         param:  "term": termino para recuperar la posting list de su stem.
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
-
         return: posting list
-
         """
 
         stem = self.stemmer.stem(term)
@@ -694,14 +640,10 @@ class SAR_Project:
     def get_permuterm(self, term, field='article'):
         """
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
-
         Devuelve la posting list asociada a un termino utilizando el indice permuterm.
-
         param:  "term": termino para recuperar la posting list, "term" incluye un comodin (* o ?).
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
-
         return: posting list
-
         """
         aux = term + '$'
 
@@ -723,16 +665,10 @@ class SAR_Project:
     def reverse_posting(self, p):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Devuelve una posting list con todas las noticias excepto las contenidas en p.
         Util para resolver las queries con NOT.
-
-
         param:  "p": posting list
-
-
         return: posting list con todos los newid exceptos los contenidos en p
-
         """
 
         copiaDic = self.news.copy()
@@ -743,10 +679,10 @@ class SAR_Project:
             if i in claves:
                 poped.append(i)
                 copiaDic.pop(i)
-        print("LAS QUE SE HAN BORRADO SON:")
-        print(poped)
+        #print("LAS QUE SE HAN BORRADO SON:")
+        #print(poped)
 
-        return copiaDic.keys()
+        return list(copiaDic.keys())
 
 
 
@@ -754,14 +690,9 @@ class SAR_Project:
     def and_posting(self, p1, p2):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Calcula el AND de dos posting list de forma EFICIENTE
-
         param:  "p1", "p2": posting lists sobre las que calcular
-
-
         return: posting list con los newid incluidos en p1 y p2
-
         """
         i = 0
         j = 0
@@ -784,14 +715,9 @@ class SAR_Project:
     def or_posting(self, p1, p2):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Calcula el OR de dos posting list de forma EFICIENTE
-
         param:  "p1", "p2": posting lists sobre las que calcular
-
-
         return: posting list con los newid incluidos de p1 o p2
-
         """
         i = 0
         j = 0
@@ -818,18 +744,15 @@ class SAR_Project:
             res.append(p2[j])
             j += 1
 
+        return res
+
     def minus_posting(self, p1, p2):
         """
         OPCIONAL PARA TODAS LAS VERSIONES
-
         Calcula el except de dos posting list de forma EFICIENTE.
         Esta funcion se propone por si os es util, no es necesario utilizarla.
-
         param:  "p1", "p2": posting lists sobre las que calcular
-
-
         return: posting list con los newid incluidos de p1 y no en p2
-
         """
         return and_posting(p1,reverse_posting(p2))
 
@@ -846,15 +769,13 @@ class SAR_Project:
     def solve_and_count(self, query):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Resuelve una consulta y la muestra junto al numero de resultados
-
         param:  "query": query que se debe resolver.
-
         return: el numero de noticias recuperadas, para la opcion -T
-
         """
         result = self.solve_query(query)
+        #print("RESULTADO")
+        #print(result)
         print("%s\t%d" % (query, len(result)))
         return len(result)  # para verificar los resultados (op: -T)
 
@@ -862,17 +783,12 @@ class SAR_Project:
     def solve_and_show(self, query):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Resuelve una consulta y la muestra informacion de las noticias recuperadas.
         Consideraciones:
-
         - En funcion del valor de "self.show_snippet" se mostrara una informacion u otra.
         - Si se implementa la opcion de ranking y en funcion del valor de self.use_ranking debera llamar a self.rank_result
-
         param:  "query": query que se debe resolver.
-
         return: el numero de noticias recuperadas, para la opcion -T
-
         """
         result = self.solve_query(query)
 
@@ -885,34 +801,55 @@ class SAR_Project:
 
         i = 1
         for elemento in result:
+            if i != 1:
+                print("-" * 10)
+
             postingList = self.news.get(elemento)
             print("#" + str(i))
             print("Score: " + str(0))
+            print(elemento)
             print("Date: " + postingList[1])
             print("Title: " + postingList[0])
             print("Keywords: " + postingList[2])
-            print("Summary: " + postingList[3])
-            print("-" * 10)
-            i += 1
+            if self.show_snippet:
+                print("Summary: " + postingList[3])
 
+            #print("-" * 10)
+            i += 1
+            if self.show_all == False and i > 100:
+                break
         print("=" * 20)
 
+    def snippet(self, noticiaID, query):
 
+        path = self.docs[noticiaID]
+        miNoticia = self.news[noticiaID]
+        target = None
+        tokens = []
+
+        for token in query:
+            if token != 'AND' and token != 'OR' and token != 'NOT':
+                tokens.append(token)
+
+        with open(path) as fh:
+            jlist = json.load(fh)
+            for noticia in jlist:
+                if(noticia['title'] == miNoticia[0] and noticia['date'] == miNoticia):
+                    target = noticia
+                    break
+
+            #for termino
 
 
     def rank_result(self, result, query):
         """
         NECESARIO PARA LA AMPLIACION DE RANKING
-
         Ordena los resultados de una query.
-
         param:  "result": lista de resultados sin ordenar
                 "query": query, puede ser la query original, la query procesada o una lista de terminos
-
-
         return: la lista de resultados ordenada
-
         """
+
         return 0
 
         ###################################################
