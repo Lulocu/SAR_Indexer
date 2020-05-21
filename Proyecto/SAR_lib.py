@@ -585,6 +585,7 @@ class SAR_Project:
           
             i = i + 1
         
+        print(res)
         return res
 
 
@@ -858,114 +859,6 @@ class SAR_Project:
                 if(noticia['title'] == miNoticia[0] and noticia['date'] == miNoticia):
                     target = noticia
                     break
-
-            #for termino
-    def parentesis(self,consultaPartes):
-        #Inicialización variables
-        encontrado = True
-        Boperador = False
-        Boperador2 = False
-        NOToperador = False
-        #print('-' * 50)
-        #print(consultaPartes)
-
-        #encontrado: para cuando haya más de un paréntesis
-        while encontrado:
-            encontrado = False
-            seguir = True
-            #print(consultaPartes)
-            #recorremos todas las palabras mirando si empiezan por paréntesis
-            for j in range(len(consultaPartes)):
-                palabra = consultaPartes[j]
-                if seguir and palabra[0] == '(':
-                    encontrado = True
-                    seguir = False
-                    #Empieza por '(' y antes tiene un operador booleano != 'NOT
-                    #Guardamos el operador
-                    if j -1 >= 0 and consultaPartes[j-1] in ['AND','OR']:
-                    
-                        operador = consultaPartes[j-1]
-                        Boperador = True
-                    #Empieza por '(' y antes tiene un NOT, hay que negar 
-                    #todo lo de dentro y aplicar morgan
-                    elif j-1 >= 0 and consultaPartes[j-1] == 'NOT':
-                        #operador = consultaPartes[j-1]
-                        NOToperador = True
-                       
-                        #Guardar el operador anterior al NOT 
-                        if j -2 >= 0 and consultaPartes[j-2] in ['AND','OR','NOT']:
-                            operador2 = consultaPartes[j-2]
-                            Boperador2 = True
-     
-                    #Guardamo indice de donde empiza el paréntesis y quitamos el paréntesis
-                    inicio = consultaPartes.index(palabra)
-                    letra = palabra.replace('(','')
-                    
-                    #buscamos el último cierre de paréntesis
-                    for fin in reversed(consultaPartes):
-                         if fin[-1] == ')':
-                            final = consultaPartes.index(fin)
-                            letraF = fin.replace(')','')
-                    
-                    #Ailamos lo que estaba entre paréntesis y le quitamos los paréntesis
-                    medio = [letra] + consultaPartes[inicio + 1:final] + [letraF]
-                    if Boperador:
-                        medio = medio + [operador]
-                    #Hay un NOT antes del paréntesis, negamos lo de dentro
-                    if NOToperador:
-
-                        #Negamos todo lo que haya dentro del paréntesis y lo reconvertimos en una lista
-                        medio = '.NOT.'.join(medio)
-                        medio = medio.split('.')
-                        medio = ['NOT'] + medio
-                        
-                        #Aplicamos la ley de morgan sobre los OR
-                        #Buscamos un OR
-                        aplMorgan = True
-                        while aplMorgan:
-                            try:
-                                pos = medio.index('OR')
-                                if medio[pos-1] == 'NOT':
-                                    #Se añade con . para evitar bucles infinitos en la siguiente comprobacion
-                                    medio = medio[0:pos -1] + [".AND"] + medio[pos+1:]
-                            except:
-                               aplMorgan = False
-
-                        aplMorgan = True
-                        while aplMorgan:
-                            try:
-                                pos = medio.index('AND')
-                                if medio[pos-1] == 'NOT':
-                                    medio = medio[0:pos -1] + ['OR'] + medio[pos+1:]
-                            except:
-                                aplMorgan = False
-
-                        #Quita el . del AND
-                        for idx, item in enumerate(medio):
-                            if item == '.AND':
-                                medio[idx] = 'AND'
-                        break
-
-            if(encontrado):
-                if Boperador2:
-                    #print(1)
-                    #ponemos lo que estaba entre paréntesis a la derecha, añadimos el operador anterior al paréntesis
-                    consultaPartes = medio + [operador2] + consultaPartes[0:inicio - 2] + consultaPartes[final+1:]
-                elif NOToperador: 
-                    #print("2")
-                    consultaPartes = medio  + consultaPartes[0:inicio-1] +consultaPartes[final+1:] #
-                else:
-                    #print("3")
-                    
-                    consultaPartes = medio + consultaPartes[0:inicio] + consultaPartes[final+1:]
-            Boperador = False
-            Boperador2 = False
-            NOToperador = False
-        #print(consultaPartes)
-        return consultaPartes
-        
-        #fin tratamiento paréntesis
-
 
     def rank_result(self, result, query):
         """
