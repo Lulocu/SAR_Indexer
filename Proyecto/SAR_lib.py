@@ -74,6 +74,7 @@ class SAR_Project:
         self.skeywords = {} # diccionario para almacenar los tokens de los keywords
         self.sarticle = {} # diccionario para almacenar los tokens de article
         self.ssummary = {} # diccionario para almacenar los tokens de summary
+        self.articulos = {} #diccionario de articulos para cada noticia
 
         self.idDoc = 0
         self.idNew = 0
@@ -183,6 +184,7 @@ class SAR_Project:
         for noticia in jlist:
             ##################ARTICLE################################################
             tokens = self.tokenize(noticia['article'])
+            self.articulos[self.idNew] = noticia['article']
             numToken = 0
             for token in tokens:
                 tokenAux = token
