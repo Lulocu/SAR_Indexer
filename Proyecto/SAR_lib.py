@@ -2,6 +2,15 @@ import json
 from nltk.stem.snowball import SnowballStemmer
 import os
 import re
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from nltk.corpus import stopwords
+import numpy as np
+import numpy.linalg as LA
+import pickle
+import random
+import sys
+import math
 
 
 class SAR_Project:
@@ -975,5 +984,41 @@ class SAR_Project:
                 "query": query, puede ser la query original, la query procesada o una lista de terminos
         return: la lista de resultados ordenada
         """
+        
+        news = []
+        doc = []
+        queryArray = []
+        disCos = []
+        for newsId in result:
+                noticia = self.articulos[newsId]
+                doc.append(noticia)
 
-        return []
+        #funcion para caclular distancia coseno
+        distanciaCos = lambda a, b : round(np.inner(a, b)/(LA.norm(a)*LA.norm(b)), 3)
+
+        stopWords = stopwords.words('spanish')
+        vectorizer = CountVectorizer(stop_words = stopWords)
+        transformer = TfidfTransformer()
+        queryArray.append(query) 
+
+        #Frequencias de documentos y queries
+        vectorDocs = vectorizer.fit_transform(doc).toarray()
+        vectorQuery = vectorizer.transform(queryArray).toarray()
+        #transformer.fit(vectorQuery)
+        #idfVectorQuery = transformer.transform(vectorQuery)
+        #print idfVectorQuery.todense()
+
+        for vector in vectorDocs:
+            disCos.append(distanciaCos(vector, vectorQuery[0]))
+
+
+        indices = np.array(disCos)
+        indices = np.argsort(indices)
+        indices = indices[::-1]
+
+        res = []
+        for i in indices:
+            res.append(result[indices[i]])
+
+        print(res)
+        return [res]
