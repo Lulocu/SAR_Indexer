@@ -159,7 +159,7 @@ class SAR_Project:
         input: "filename" es el nombre de un fichero en formato JSON Arrays (https://www.w3schools.com/js/js_json_arrays.asp).
                 Una vez parseado con json.load tendremos una lista de diccionarios, cada diccionario se corresponde a una noticia
         """
-        print("Nombre fichero: " + filename)
+        #print("Nombre fichero: " + filename)
         with open(filename) as fh:
             jlist = json.load(fh)
 
@@ -513,58 +513,79 @@ class SAR_Project:
                 "prev": incluido por si se quiere hacer una version recursiva. No es necesario utilizarlo.
         return: posting list con el resultado de la query
         """
+        res = []
+        listaPosting = []
+
 
         if query is None or len(query) == 0:
             return []
 
-        res = []
         consultaPartes = query.split()
-        i = 0
+        #print(consultaPartes)
+        
+        j = 0
 
-        if consultaPartes[0] == "AND" or consultaPartes[0] == "OR":
-            return []
+        while j <len(consultaPartes):
+            palabra = consultaPartes[j]
+            #Miramos si hay paréntesis
+            if palabra[0] == '(':
+                for parFinal in reversed(consultaPartes):
+                    if parFinal[-1] == ')':
+                        indFin = consultaPartes.index(parFinal)
+                        medio = [palabra.replace('(','')] + consultaPartes[j+1:indFin] +[parFinal.replace('(','')]
+                        medio = ' '.join(medio)
+                        #Llamamos a este método pero sin paréntesis
+                        rec = self.solve_query(medio)
+                        print(rec)
+                        listaPosting.append(rec)
+                        j = indFin
 
-        if len(consultaPartes) == 1:
-            return self.get_posting(consultaPartes[0])
+            #Miramos si hay parte posicional
+            elif palabra[0] == '"':
+                for parFinal in reversed(consultaPartes):
+                    if parFinal[-1] == '"':
+                        indFin = consultaPartes.index(parFinal)
+                        medio = [palabra.replace('"','')] + consultaPartes[j+1:indFin] +[parFinal.replace('"','')]
+                        #Llamamos a este método pero sin paréntesis
+                        listaPosting.append(self.positional(medio))
+                        j = indFin
 
-        if len(consultaPartes) < 3:
-            if len(consultaPartes) == 2 and consultaPartes[0] == "NOT":
-                return self.reverse_posting(self.get_posting(consultaPartes[1]))
-            elif len(consultaPartes) == 2 and consultaPartes[1] != "NOT":
-                return self.get_posting(consultaPartes[0])
+            elif palabra in {'AND','OR','NOT'}:
+                listaPosting.append(palabra)
+
             else:
-                return res
+                listaPosting.append(self.get_posting(palabra))
+            j = j + 1
+
+        #En listaPosting tenemos todas las posting list y los operadores binarios
+        if listaPosting[0] == 'NOT':
+            res = self.reverse_posting(listaPosting[1])
+            i = 2
         else:
-            while i < len(consultaPartes) - 1:
-                if consultaPartes[i] == "NOT":
-                    siguiente = self.get_posting(consultaPartes[i + 1])
-                    res = self.reverse_posting(siguiente)
-                    i += 1
+            res = listaPosting[0]
+            i = 1
+
+        while i < len(listaPosting):
+            if listaPosting[i] == 'AND':
+                i = i + 1
+                if listaPosting[i] == 'NOT':
+                    i = i + 1
+                    res = self.and_posting(res,self.reverse_posting(listaPosting[i]))
                 else:
-                    if consultaPartes[i] == "AND":
-                        if consultaPartes[i+1] == "NOT":
-                            siguiente = self.reverse_posting(self.get_posting(consultaPartes[i + 2]))
-                            res = self.and_posting(res,siguiente)
-                            i += 2
-                        else:
-                            siguiente = self.get_posting(consultaPartes[i + 1])
-                            res = self.and_posting(res,siguiente)
-                            i += 1
-                    elif consultaPartes[i] == "OR":
-                        if consultaPartes[i+1] == "NOT":
-                            siguiente = self.reverse_posting(self.get_posting(consultaPartes[i + 2]))
-                            res = self.or_posting(res,siguiente)
-                            i += 2
-                        else:
-                            siguiente = self.get_posting(consultaPartes[i + 1])
-                            res = self.or_posting(res,siguiente)
-                            i += 1
-                    else:
-                        res = self.get_posting(consultaPartes[i])
-                        #print(i)
-                        #print(res)
-                i += 1
-            return res
+                    res = self.and_posting(res,listaPosting[i])
+
+            if listaPosting[i] == 'OR':
+                i = i + 1
+                if listaPosting[i] == 'NOT':
+                    i = i + 1
+                    res = self.or_posting(res,self.reverse_posting(listaPosting[i]))
+                else:
+                    
+                    res = self.or_posting(res,listaPosting[i])
+          
+            i = i + 1
+        
+        return res
 
 
         ########################################
@@ -839,6 +860,111 @@ class SAR_Project:
                     break
 
             #for termino
+    def parentesis(self,consultaPartes):
+        #Inicialización variables
+        encontrado = True
+        Boperador = False
+        Boperador2 = False
+        NOToperador = False
+        #print('-' * 50)
+        #print(consultaPartes)
+
+        #encontrado: para cuando haya más de un paréntesis
+        while encontrado:
+            encontrado = False
+            seguir = True
+            #print(consultaPartes)
+            #recorremos todas las palabras mirando si empiezan por paréntesis
+            for j in range(len(consultaPartes)):
+                palabra = consultaPartes[j]
+                if seguir and palabra[0] == '(':
+                    encontrado = True
+                    seguir = False
+                    #Empieza por '(' y antes tiene un operador booleano != 'NOT
+                    #Guardamos el operador
+                    if j -1 >= 0 and consultaPartes[j-1] in ['AND','OR']:
+                    
+                        operador = consultaPartes[j-1]
+                        Boperador = True
+                    #Empieza por '(' y antes tiene un NOT, hay que negar 
+                    #todo lo de dentro y aplicar morgan
+                    elif j-1 >= 0 and consultaPartes[j-1] == 'NOT':
+                        #operador = consultaPartes[j-1]
+                        NOToperador = True
+                       
+                        #Guardar el operador anterior al NOT 
+                        if j -2 >= 0 and consultaPartes[j-2] in ['AND','OR','NOT']:
+                            operador2 = consultaPartes[j-2]
+                            Boperador2 = True
+     
+                    #Guardamo indice de donde empiza el paréntesis y quitamos el paréntesis
+                    inicio = consultaPartes.index(palabra)
+                    letra = palabra.replace('(','')
+                    
+                    #buscamos el último cierre de paréntesis
+                    for fin in reversed(consultaPartes):
+                         if fin[-1] == ')':
+                            final = consultaPartes.index(fin)
+                            letraF = fin.replace(')','')
+                    
+                    #Ailamos lo que estaba entre paréntesis y le quitamos los paréntesis
+                    medio = [letra] + consultaPartes[inicio + 1:final] + [letraF]
+                    if Boperador:
+                        medio = medio + [operador]
+                    #Hay un NOT antes del paréntesis, negamos lo de dentro
+                    if NOToperador:
+
+                        #Negamos todo lo que haya dentro del paréntesis y lo reconvertimos en una lista
+                        medio = '.NOT.'.join(medio)
+                        medio = medio.split('.')
+                        medio = ['NOT'] + medio
+                        
+                        #Aplicamos la ley de morgan sobre los OR
+                        #Buscamos un OR
+                        aplMorgan = True
+                        while aplMorgan:
+                            try:
+                                pos = medio.index('OR')
+                                if medio[pos-1] == 'NOT':
+                                    #Se añade con . para evitar bucles infinitos en la siguiente comprobacion
+                                    medio = medio[0:pos -1] + [".AND"] + medio[pos+1:]
+                            except:
+                               aplMorgan = False
+
+                        aplMorgan = True
+                        while aplMorgan:
+                            try:
+                                pos = medio.index('AND')
+                                if medio[pos-1] == 'NOT':
+                                    medio = medio[0:pos -1] + ['OR'] + medio[pos+1:]
+                            except:
+                                aplMorgan = False
+
+                        #Quita el . del AND
+                        for idx, item in enumerate(medio):
+                            if item == '.AND':
+                                medio[idx] = 'AND'
+                        break
+
+            if(encontrado):
+                if Boperador2:
+                    #print(1)
+                    #ponemos lo que estaba entre paréntesis a la derecha, añadimos el operador anterior al paréntesis
+                    consultaPartes = medio + [operador2] + consultaPartes[0:inicio - 2] + consultaPartes[final+1:]
+                elif NOToperador: 
+                    #print("2")
+                    consultaPartes = medio  + consultaPartes[0:inicio-1] +consultaPartes[final+1:] #
+                else:
+                    #print("3")
+                    
+                    consultaPartes = medio + consultaPartes[0:inicio] + consultaPartes[final+1:]
+            Boperador = False
+            Boperador2 = False
+            NOToperador = False
+        #print(consultaPartes)
+        return consultaPartes
+        
+        #fin tratamiento paréntesis
 
 
     def rank_result(self, result, query):
