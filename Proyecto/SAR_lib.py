@@ -668,7 +668,7 @@ class SAR_Project:
             return self.get_permuterm(term)
 
         #self.get_stemming(term)
-        if term[0] == '"':
+        if term[0][0] == '"':
             return self.get_positionals(term)
 
 
@@ -693,7 +693,24 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
-        print(self.positional)
+        terms = [terms[0][1:]] + terms[1:-1] + [terms[-1][0:-1]]
+        dicNoticias = {}
+        for palabra in terms:
+            if palabra not in dicNoticias.keys():
+                for aux in self.index[palabra]:
+                    dicNoticias[palabra][aux[1]] = dicNoticias[palabra].get(aux[1],[]).append(aux[2])
+
+        listaAnd = []
+        for llave in dicNoticias.keys():
+            if listaAnd == []:
+                listaAnd = dicNoticias[llave]
+            else:
+                listaAnd = self.and_posting(listaAnd,dicNoticias[llave]) 
+
+        #En listaAnd tengo una posting list con idmNews de las noticias que contienen todas las palabras
+
+
+        return (1)
 
 
 
