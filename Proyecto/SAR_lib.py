@@ -2,6 +2,15 @@ import json
 from nltk.stem.snowball import SnowballStemmer
 import os
 import re
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from nltk.corpus import stopwords
+import numpy as np
+import numpy.linalg as LA
+import pickle
+import random
+import sys
+import math
 
 
 class SAR_Project:
@@ -65,6 +74,7 @@ class SAR_Project:
         self.skeywords = {} # diccionario para almacenar los tokens de los keywords
         self.sarticle = {} # diccionario para almacenar los tokens de article
         self.ssummary = {} # diccionario para almacenar los tokens de summary
+        self.articulos = {} #diccionario de articulos para cada noticia
 
         self.idDoc = 0
         self.idNew = 0
@@ -174,6 +184,7 @@ class SAR_Project:
         for noticia in jlist:
             ##################ARTICLE################################################
             tokens = self.tokenize(noticia['article'])
+            self.articulos[self.idNew] = noticia['article']
             numToken = 0
             for token in tokens:
                 tokenAux = token
@@ -515,7 +526,7 @@ class SAR_Project:
         """
         res = []
         listaPosting = []
-
+        nPar = -1
 
         if query is None or len(query) == 0:
             return []
@@ -527,32 +538,67 @@ class SAR_Project:
 
         while j <len(consultaPartes):
             palabra = consultaPartes[j]
+            if palabra not in {'OR','NOT','AND','(OR','(AND','(NOT','OR)','NOT)','AND)'}:
+                palabra = palabra.lower()
+
             #Miramos si hay paréntesis
             if palabra[0] == '(':
                 nPar = 1
+                #Miro si hay más '('
+                x = 1
+                while x < len(palabra):
+                    if palabra[x] == '(':
+                        nPar = nPar + 1
+                        x = x + 1 
+                    else:
+                        x = len(palabra)
+                #fin mirar
+
+
                 i = j +1
+                
+                #Para todas las palabras de la consulta hasta cerrar el paréntesis
                 while nPar > 0 and i < len(consultaPartes):
                     parFinal = consultaPartes[i]
-                    
+
+                    #si la palabra empieza por '(' y si tiene más paréntesis
                     if parFinal[0] == '(':
                         nPar = nPar + 1
+                        x = 1
+                        while x < len(parFinal):
+                            if parFinal[x] == '(':
+                                nPar = nPar + 1
+                                x = x+1
+                            else:
+                                x = len(parFinal)
+
+                    #si la palabra termina en ')' y si tiene más paréntesis
                     if parFinal[-1] == ')':
                         nPar = nPar -1
+                        x = len(parFinal) -2
+
+                        while x >= 0 and nPar > 0:
+                            if parFinal[x] == ')':
+                                nPar = nPar - 1
+                                x = x - 1
+                            else:
+                                x = -1
                     i = i +1
+
                 medio = [palabra[1:]] + consultaPartes[j+1:i -1] + [parFinal[0:-1]]
                 medio = ' '.join(medio)
                 listaPosting.append(self.solve_query(medio))
                 j = i -1
-
+            
 
             #Miramos si hay parte posicional
             elif palabra[0] == '"':
                 for parFinal in reversed(consultaPartes):
                     if parFinal[-1] == '"':
                         indFin = consultaPartes.index(parFinal)
-                        medio = [palabra.replace('"','')] + consultaPartes[j+1:indFin] +[parFinal.replace('"','')]
+                        medio =consultaPartes[j:indFin +1]
                         #Llamamos a este método pero sin paréntesis
-                        listaPosting.append(self.positional(medio))
+                        listaPosting.append(self.get_posting(medio))
                         j = indFin
 
             elif palabra in {'AND','OR','NOT'}:
@@ -561,6 +607,8 @@ class SAR_Project:
             else:
                 listaPosting.append(self.get_posting(palabra))
             j = j + 1
+
+        #print(listaPosting)
         #En listaPosting tenemos todas las posting list y los operadores binarios
         if listaPosting[0] == 'NOT':
             res = self.reverse_posting(listaPosting[1])
@@ -871,5 +919,41 @@ class SAR_Project:
                 "query": query, puede ser la query original, la query procesada o una lista de terminos
         return: la lista de resultados ordenada
         """
+        
+        news = []
+        doc = []
+        queryArray = []
+        disCos = []
+        for newsId in result:
+                noticia = self.articulos[newsId]
+                doc.append(noticia)
 
-        return []
+        #funcion para caclular distancia coseno
+        distanciaCos = lambda a, b : round(np.inner(a, b)/(LA.norm(a)*LA.norm(b)), 3)
+
+        stopWords = stopwords.words('spanish')
+        vectorizer = CountVectorizer(stop_words = stopWords)
+        transformer = TfidfTransformer()
+        queryArray.append(query) 
+
+        #Frequencias de documentos y queries
+        vectorDocs = vectorizer.fit_transform(doc).toarray()
+        vectorQuery = vectorizer.transform(queryArray).toarray()
+        #transformer.fit(vectorQuery)
+        #idfVectorQuery = transformer.transform(vectorQuery)
+        #print idfVectorQuery.todense()
+
+        for vector in vectorDocs:
+            disCos.append(distanciaCos(vector, vectorQuery[0]))
+
+
+        indices = np.array(disCos)
+        indices = np.argsort(indices)
+        indices = indices[::-1]
+
+        res = []
+        for i in indices:
+            res.append(result[indices[i]])
+
+        print(res)
+        return [res]
