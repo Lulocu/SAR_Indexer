@@ -475,6 +475,7 @@ class SAR_Project:
 
         if self.permuterm == True:
             self.make_permuterm()
+            print(self.ptindex)
             if self.multifield == True:
                 print("PERMUTERMS:")
                 print("\t# permuterms in 'title': " + str(len(self.pttitle)))
@@ -549,14 +550,14 @@ class SAR_Project:
                 while x < len(palabra):
                     if palabra[x] == '(':
                         nPar = nPar + 1
-                        x = x + 1 
+                        x = x + 1
                     else:
                         x = len(palabra)
                 #fin mirar
 
 
                 i = j +1
-                
+
                 #Para todas las palabras de la consulta hasta cerrar el paréntesis
                 while nPar > 0 and i < len(consultaPartes):
                     parFinal = consultaPartes[i]
@@ -589,7 +590,7 @@ class SAR_Project:
                 medio = ' '.join(medio)
                 listaPosting.append(self.solve_query(medio))
                 j = i -1
-            
+
 
             #Miramos si hay parte posicional
             elif palabra[0] == '"':
@@ -735,18 +736,17 @@ class SAR_Project:
 
         alFinal = False
         while not alFinal:
+            print(aux)
             if aux[-1] == '?' or aux[-1] == '*':
                 alFinal = True
             else:
                 aux = aux[-1] + aux[0:-1]
 
-        #print(self.ptindex.get(aux))
+        print("Recuperar: ",self.ptindex.get(aux))
         print('AUX:')
         print(aux)
         print('Diccionario')
-        for keys, values in self.ptindex.items():
-            print(keys)
-            print(values)
+        print(self.ptindex)
         return self.ptindex.get(aux)
 
 
@@ -880,6 +880,9 @@ class SAR_Project:
         param:  "query": query que se debe resolver.
         return: el numero de noticias recuperadas, para la opcion -T
         """
+        if self.permuterm:
+            self.make_permuterm()
+
         result = self.solve_query(query)
 
         if self.use_ranking:
@@ -936,7 +939,7 @@ class SAR_Project:
                 "query": query, puede ser la query original, la query procesada o una lista de terminos
         return: la lista de resultados ordenada
         """
-        
+
         news = []
         doc = []
         queryArray = []
@@ -951,7 +954,7 @@ class SAR_Project:
         stopWords = stopwords.words('spanish')
         vectorizer = CountVectorizer(stop_words = stopWords)
         transformer = TfidfTransformer()
-        queryArray.append(query) 
+        queryArray.append(query)
 
         #Frequencias de documentos y queries
         vectorDocs = vectorizer.fit_transform(doc).toarray()
