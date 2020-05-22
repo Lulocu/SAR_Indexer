@@ -262,10 +262,29 @@ class SAR_Project:
                     numToken += 1
 
             ##################DATE################################################
-            if self.dates.get(noticia["date"]) == None:
-                self.dates[noticia["date"]] = 1
-            else:
-                self.dates[noticia["date"]] = self.dates.get(noticia["date"]) + 1
+                dateAux = "date:" + noticia["date"]
+                print(dateAux)
+                """
+                print(dateAux)
+                if self.dates.get(noticia["date"]) == None:
+                    self.dates[noticia["date"]] = 1
+                else:
+                    self.dates[noticia["date"]] = self.dates.get(noticia["date"]) + 1
+                """
+                if self.index.get(dateAux) == None:
+                    self.index[dateAux] = [[self.idDoc,self.idNew,numToken]] #numtoken  -> -1
+                    self.dates[dateAux] = [[self.idDoc,self.idNew,numToken]]
+                else:
+                    aux = self.index.get(dateAux)
+                    aux.append([self.idDoc,self.idNew,numToken])
+                    self.index[dateAux] = aux
+
+                    aux = self.dates.get(dateAux)
+                    aux.append([self.idDoc,self.idNew,numToken])
+                    self.dates[dateAux] = aux
+
+            
+
 
             self.idNew += 1
         self.idDoc += 1
@@ -531,7 +550,7 @@ class SAR_Project:
         """
         #hay que borrarlo
         self.make_permuterm()
-
+        
 
         res = []
         listaPosting = []
@@ -541,6 +560,7 @@ class SAR_Project:
             return []
 
         consultaPartes = query.split()
+
         #print("Consulta partes: ",consultaPartes)
 
         j = 0
