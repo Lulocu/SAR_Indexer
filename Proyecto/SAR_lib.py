@@ -271,7 +271,6 @@ class SAR_Project:
         self.idDoc += 1
 
         #print("SE VA A INTRODUCIR TODOS LOS TOKEN PERMUTERM EN ptindex")
-        #self.make_permuterm()
         #print(self.index)
         #print(len(self.title))
 
@@ -366,17 +365,21 @@ class SAR_Project:
         for token in self.index.keys():
             aux = token + '$'
 
+            #for i in range(len(aux))
+            #    aux = aux[-1] + aux[0:-1]
+
+
+
             for i in range(len(aux)):
                 aux = aux[1:] + aux[0]
-
                 if self.ptindex.get(aux) == None:
                     self.ptindex[aux] = [token]
                 else:
                     aux2 = self.ptindex.get(aux)
                     aux2.append(token)
                     self.ptindex[aux] = aux2
-
-        if self.permuterm == True:
+        #estaba permuterm
+        if self.multifield == True:
             for token in self.title.keys():
                 aux = token + '$'
 
@@ -441,6 +444,7 @@ class SAR_Project:
                         aux2 = self.ptsummary.get(aux)
                         aux2.append(token)
                         self.ptsummary[aux] = aux2
+        
 
 
 
@@ -475,7 +479,7 @@ class SAR_Project:
 
         if self.permuterm == True:
             self.make_permuterm()
-            print(self.ptindex)
+            #print(self.ptindex)
             if self.multifield == True:
                 print("PERMUTERMS:")
                 print("\t# permuterms in 'title': " + str(len(self.pttitle)))
@@ -525,6 +529,10 @@ class SAR_Project:
                 "prev": incluido por si se quiere hacer una version recursiva. No es necesario utilizarlo.
         return: posting list con el resultado de la query
         """
+        #hay que borrarlo
+        self.make_permuterm()
+
+
         res = []
         listaPosting = []
         nPar = -1
@@ -661,7 +669,6 @@ class SAR_Project:
         return: posting list
         """
         #print("HOLAAAAA")
-        #self.make_permuterm()
         #print(self.ptindex)
 
         if "*" in term or "?" in term:
@@ -694,11 +701,16 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
+
+        print('-' * 75)
         terms = [terms[0][1:]] + terms[1:-1] + [terms[-1][0:-1]]
         dicNoticias = {}
         for palabra in terms:
             if palabra not in dicNoticias.keys():
                 for aux in self.index[palabra]:
+                    print(palabra) 
+                    #Mirar esta linia, peta, no estoy metiendo bien las claves
+                    dicNoticias[palabra] = dicNoticias[palabra].get(aux[1],{})
                     dicNoticias[palabra][aux[1]] = dicNoticias[palabra].get(aux[1],[]).append(aux[2])
 
         listaAnd = []
@@ -708,10 +720,19 @@ class SAR_Project:
             else:
                 listaAnd = self.and_posting(listaAnd,dicNoticias[llave]) 
 
+        res = []
         #En listaAnd tengo una posting list con idmNews de las noticias que contienen todas las palabras
+        for documento in listaAnd:
+            for aparicion in dicNoticias[terms[0]][documento]:
+                origen = aparicion
+                insertar = True
+                for pos in range(1,len(terms)):
+                    if dicNoticias[terms[0]][documento][pos] != origen + i:
+                        insertar = False
+                if insertar:
+                    res.append(documento)
 
-
-        return (1)
+        return (list(set(res)))
 
 
 
@@ -753,7 +774,7 @@ class SAR_Project:
 
         alFinal = False
         while not alFinal:
-            print(aux)
+            #print(aux)
             if aux[-1] == '?' or aux[-1] == '*':
                 alFinal = True
             else:
@@ -897,8 +918,6 @@ class SAR_Project:
         param:  "query": query que se debe resolver.
         return: el numero de noticias recuperadas, para la opcion -T
         """
-        if self.permuterm:
-            self.make_permuterm()
 
         result = self.solve_query(query)
 
