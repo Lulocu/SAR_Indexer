@@ -702,23 +702,22 @@ class SAR_Project:
         return: posting list
         """
 
-        print('-' * 75)
         terms = [terms[0][1:]] + terms[1:-1] + [terms[-1][0:-1]]
         dicNoticias = {}
         for palabra in terms:
             if palabra not in dicNoticias.keys():
                 for aux in self.index[palabra]:
-                    print(palabra) 
-                    #Mirar esta linia, peta, no estoy metiendo bien las claves
-                    dicNoticias[palabra] = dicNoticias[palabra].get(aux[1],{})
-                    dicNoticias[palabra][aux[1]] = dicNoticias[palabra].get(aux[1],[]).append(aux[2])
+                    dicNoticias[palabra] = dicNoticias.get(palabra,{})
+                    dicNoticias[palabra][aux[1]] = dicNoticias[palabra].get(aux[1],[])
+                    dicNoticias[palabra][aux[1]].append(aux[2])
 
         listaAnd = []
         for llave in dicNoticias.keys():
             if listaAnd == []:
-                listaAnd = dicNoticias[llave]
+                listaAnd = list(dicNoticias[llave].keys())
             else:
-                listaAnd = self.and_posting(listaAnd,dicNoticias[llave]) 
+                #dicNoticias[llave][idnews]
+                listaAnd = self.and_posting(listaAnd,list(dicNoticias[llave].keys())) 
 
         res = []
         #En listaAnd tengo una posting list con idmNews de las noticias que contienen todas las palabras
@@ -727,12 +726,13 @@ class SAR_Project:
                 origen = aparicion
                 insertar = True
                 for pos in range(1,len(terms)):
-                    if dicNoticias[terms[0]][documento][pos] != origen + i:
+                    if origen + pos not in dicNoticias[terms[pos]][documento]:
                         insertar = False
                 if insertar:
                     res.append(documento)
-
-        return (list(set(res)))
+        imprimir = list(set(res))
+        imprimir.sort()
+        return imprimir
 
 
 
