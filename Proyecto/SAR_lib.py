@@ -664,10 +664,13 @@ class SAR_Project:
         #print(self.ptindex)
 
         if "*" in term or "?" in term:
-            print("HOLAAAA " + term)
+            #print("HOLAAAA " + term)
             return self.get_permuterm(term)
 
         #self.get_stemming(term)
+        if term[0] == '"':
+            return self.get_positionals(term)
+
 
         #VERSION BASICA
         arrayIdNews = []
@@ -690,6 +693,7 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
+        print(self.positional)
 
 
 
@@ -720,16 +724,29 @@ class SAR_Project:
         """
         aux = term + '$'
 
-        i = 0
-        for i in range(len(aux)):
-            if aux[i] != '?' and aux[i] != '*':
-                aux = aux[1:] + aux[0]
+        #i = 0
+        #for i in range(len(aux)):
+        #    if aux[i] != '?' and aux[i] != '*':
+        #        aux = aux[1:] + aux[0]
+        #    else:
+        #        aux = aux[1:] + aux[0]
+        #        break
+        #aux = aux[1:]
+
+        alFinal = False
+        while not alFinal:
+            if aux[-1] == '?' or aux[-1] == '*':
+                alFinal = True
             else:
-                aux = aux[1:] + aux[0]
-                break
-        aux = aux[1:]
+                aux = aux[-1] + aux[0:-1]
 
         #print(self.ptindex.get(aux))
+        print('AUX:')
+        print(aux)
+        print('Diccionario')
+        for keys, values in self.ptindex.items():
+            print(keys)
+            print(values)
         return self.ptindex.get(aux)
 
 
