@@ -142,7 +142,7 @@ class SAR_Project:
         Recorre recursivamente el directorio "root"  y indexa su contenido
         los argumentos adicionales "**args" solo son necesarios para las funcionalidades ampliadas
         """
-        print("ARGUMENTOS:" + str(args) )
+        #print("ARGUMENTOS:" + str(args) )
         self.multifield = args['multifield']
         self.positional = args['positional']
         self.stemming = args['stem']
@@ -156,8 +156,8 @@ class SAR_Project:
                     self.index_file(fullname)
         self.make_stemming()
         self.make_permuterm()
-        print(self.idDoc)
-        print('Llamada a  permuterm')
+        #print(self.idDoc)
+        #print('Llamada a  permuterm')
 
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
@@ -322,18 +322,19 @@ class SAR_Project:
         Crea el indice de stemming (self.sindex) para los terminos de todos los indices.
         self.stemmer.stem(token) devuelve el stem del token
         """
-        if(self.multifield != True):
-            for token in self.index.keys():
-                stem = self.stemmer.stem(token)
-                if self.sindex.get(stem) == None:
-                    self.sindex[stem] = [token]
-                else:
-                    aux = self.sindex.get(stem)
-                    aux.append(token)
-                    self.sindex[stem] = aux
-        else:
+
+        for token in self.index.keys():
+            stem = self.stemmer.stem(token)
+            if self.sindex.get(stem) == None:
+                self.sindex[stem] = [token]
+            else:
+                aux = self.sindex.get(stem)
+                aux.append(token)
+                self.sindex[stem] = aux
+        if self.multifield:
             for token in self.title.keys():
                 stem = self.stemmer.stem(token)
+                
                 if self.stitle.get(stem) == None:
                     self.stitle[stem] = [token]
                 else:
@@ -380,8 +381,7 @@ class SAR_Project:
                     aux = self.ssummary.get(stem)
                     aux.append(token)
                     self.ssummary[stem] = aux
-
-
+        print(self.sindex)
 
     def make_permuterm(self):
         """
@@ -811,11 +811,6 @@ class SAR_Project:
             else:
                 aux = aux[-1] + aux[0:-1]
 
-        print("Recuperar: ",self.ptindex.get(aux))
-        print('AUX:')
-        print(aux)
-        print('Diccionario')
-        print(self.ptindex)
         return self.ptindex.get(aux)
 
 
