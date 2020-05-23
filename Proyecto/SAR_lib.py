@@ -774,7 +774,6 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
-
         stem = self.stemmer.stem(term)
         palabras = self.sindex[stem]
         posting = []
@@ -783,6 +782,8 @@ class SAR_Project:
         for termino in palabras:
             añadir = [item[1] for item in self.index[termino]]
             posting = list(set().union(posting,añadir))
+
+        posting.sort()
              
         return posting
 
