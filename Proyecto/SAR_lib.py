@@ -263,7 +263,7 @@ class SAR_Project:
 
             ##################DATE################################################
                 dateAux = "date:" + noticia["date"]
-                print(dateAux)
+
                 """
                 print(dateAux)
                 if self.dates.get(noticia["date"]) == None:
