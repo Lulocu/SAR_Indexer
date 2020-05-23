@@ -13,6 +13,7 @@ import sys
 import math
 import numpy as geek
 
+
 class SAR_Project:
     """
     Prototipo de la clase para realizar la indexacion y la recuperacion de noticias
