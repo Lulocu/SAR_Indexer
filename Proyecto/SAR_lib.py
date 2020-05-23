@@ -964,7 +964,7 @@ class SAR_Project:
                 print("Title: " + postingList[0])
                 print("Keywords: " + postingList[2])
                 if self.show_snippet:
-                    print("Summary: " + postingList[3])
+                    print("Snippet: " + str(self.snippet(elemento, query)))
 
                 #print("-" * 10)
                 i += 1
@@ -984,7 +984,7 @@ class SAR_Project:
                 print("Title: " + postingList[0])
                 print("Keywords: " + postingList[2])
                 if self.show_snippet:
-                    print("Summary: " + postingList[3])
+                    print("Snippet: " + str(self.snippet(elemento, query)))
 
                 #print("-" * 10)
                 i += 1
@@ -995,21 +995,44 @@ class SAR_Project:
 
     def snippet(self, noticiaID, query):
 
-        path = self.docs[noticiaID]
-        miNoticia = self.news[noticiaID]
-        target = None
-        tokens = []
+        miNoticia = self.articulos[noticiaID]
+        tokens = query.split()            
+        
+        palabras = miNoticia.replace(',', '').replace('.', '').replace(':', '').replace(';', '').split()
+        
+        indice = 0
+        min = 0
+        for x in range(0,len(palabras)):
+            if palabras[x] in tokens:
+                min = indice
+                break
+            indice+=1
 
-        for token in query:
-            if token != 'AND' and token != 'OR' and token != 'NOT':
-                tokens.append(token)
+        max = 0
+        indice = 0
+        for x in range(0,len(palabras)):
+            if palabras[(len(palabras) - x -1)] in tokens:
+                max = len(palabras) - indice -1
+                break
+            indice+=1
 
-        with open(path) as fh:
-            jlist = json.load(fh)
-            for noticia in jlist:
-                if(noticia['title'] == miNoticia[0] and noticia['date'] == miNoticia):
-                    target = noticia
-                    break
+        margenMin = 0
+        margenMax = 0
+            
+        if (min - 5) > (-1):
+            margenMin = min - 5
+        else:
+            margenMin = 0
+        if max + 5 < len(palabras):
+            margenMax = max + 5
+        else:
+            margenMax = len(palabras)
+
+        resultado = miNoticia.split()
+        resultado = resultado[margenMin:margenMax]
+        resultado = " ".join(resultado)
+                
+        return resultado
 
     def rank_result(self, result, query):
         """
