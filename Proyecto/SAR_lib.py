@@ -154,6 +154,10 @@ class SAR_Project:
                 if filename.endswith('.json'):
                     fullname = os.path.join(dir, filename)
                     self.index_file(fullname)
+        self.make_stemming()
+        self.make_permuterm()
+        print(self.idDoc)
+        print('Llamada a  permuterm')
 
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
@@ -183,6 +187,7 @@ class SAR_Project:
         #print("SE VA A INTRODUCIR TODOS LOS TOKEN EN index")
         self.docs[self.idDoc] = filename
         for noticia in jlist:
+
             ##################ARTICLE################################################
             tokens = self.tokenize(noticia['article'])
             self.articulos[self.idNew] = noticia['article']
@@ -290,6 +295,7 @@ class SAR_Project:
 
             self.idNew += 1
         self.idDoc += 1
+
 
         #print("SE VA A INTRODUCIR TODOS LOS TOKEN PERMUTERM EN ptindex")
         #print(self.index)
@@ -413,7 +419,7 @@ class SAR_Project:
                         aux2 = self.pttitle.get(aux)
                         aux2.append(token)
                         self.pttitle[aux] = aux2
-
+            #print('1'*50)
             for token in self.dates.keys():
                 aux = token + '$'
 
@@ -426,7 +432,7 @@ class SAR_Project:
                         aux2 = self.ptdates.get(aux)
                         aux2.append(token)
                         self.ptdates[aux] = aux2
-
+            #print('2'*50)
             for token in self.keywords.keys():
                 aux = token + '$'
 
@@ -439,7 +445,7 @@ class SAR_Project:
                         aux2 = self.ptkeywords.get(aux)
                         aux2.append(token)
                         self.ptkeywords[aux] = aux2
-
+            #print('3'*50)
             for token in self.article.keys():
                 aux = token + '$'
 
@@ -452,7 +458,7 @@ class SAR_Project:
                         aux2 = self.ptarticle.get(aux)
                         aux2.append(token)
                         self.ptarticle[aux] = aux2
-
+            #print('4'*50)
             for token in self.summary.keys():
                 aux = token + '$'
 
@@ -499,7 +505,7 @@ class SAR_Project:
             print("-" * 40)
 
         if self.permuterm == True:
-            self.make_permuterm()
+            #self.make_permuterm()
             #print(self.ptindex)
             if self.multifield == True:
                 print("PERMUTERMS:")
@@ -514,7 +520,7 @@ class SAR_Project:
                 print("-" * 40)
         
         if self.stemming == True:
-            self.make_stemming()
+            #self.make_stemming()
             if self.multifield == True:
                 print("STEMS:")
                 print("\t# stems in 'title': " + str(len(self.stitle)))
