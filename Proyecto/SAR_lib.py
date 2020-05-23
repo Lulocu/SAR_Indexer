@@ -777,11 +777,14 @@ class SAR_Project:
 
         stem = self.stemmer.stem(term)
         palabras = self.sindex[stem]
-        postingList = []
-        for termino in palabras:
-            postingList.append(solve_query(term))
+        posting = []
 
-        return postingList
+
+        for termino in palabras:
+            añadir = [item[1] for item in self.index[termino]]
+            posting = list(set().union(posting,añadir))
+             
+        return posting
 
 
 
