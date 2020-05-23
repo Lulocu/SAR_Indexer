@@ -381,7 +381,6 @@ class SAR_Project:
                     aux = self.ssummary.get(stem)
                     aux.append(token)
                     self.ssummary[stem] = aux
-        print(self.sindex)
 
     def make_permuterm(self):
         """
