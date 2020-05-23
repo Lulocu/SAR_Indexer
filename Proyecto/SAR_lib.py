@@ -11,7 +11,7 @@ import pickle
 import random
 import sys
 import math
-
+import numpy as geek
 
 class SAR_Project:
     """
@@ -75,7 +75,8 @@ class SAR_Project:
         self.sarticle = {} # diccionario para almacenar los tokens de article
         self.ssummary = {} # diccionario para almacenar los tokens de summary
         self.articulos = {} #diccionario de articulos para cada noticia
-
+        self.distCos = {} #diccionario distancias coseno
+        
         self.idDoc = 0
         self.idNew = 0
 
@@ -185,6 +186,7 @@ class SAR_Project:
             ##################ARTICLE################################################
             tokens = self.tokenize(noticia['article'])
             self.articulos[self.idNew] = noticia['article']
+            self.distCos[self.idNew] = 0
             numToken = 0
             for token in tokens:
                 tokenAux = token
@@ -949,25 +951,47 @@ class SAR_Project:
         print("Number of results: " + str(len(result)))
 
         i = 1
-        for elemento in result:
-            if i != 1:
-                print("-" * 10)
+        if self.use_ranking:
+            for elemento in ranking:
+                if i != 1:
+                    print("-" * 10)
+    
+                postingList = self.news.get(elemento)
+                print("#" + str(i))
+                print("Score: " + str(self.distCos[elemento]))
+                print(elemento)
+                print("Date: " + postingList[1])
+                print("Title: " + postingList[0])
+                print("Keywords: " + postingList[2])
+                if self.show_snippet:
+                    print("Summary: " + postingList[3])
 
-            postingList = self.news.get(elemento)
-            print("#" + str(i))
-            print("Score: " + str(0))
-            print(elemento)
-            print("Date: " + postingList[1])
-            print("Title: " + postingList[0])
-            print("Keywords: " + postingList[2])
-            if self.show_snippet:
-                print("Summary: " + postingList[3])
+                #print("-" * 10)
+                i += 1
+                if self.show_all == False and i > 100:
+                    break
+            print("=" * 20)
+        else:
+            for elemento in result:
+                if i != 1:
+                    print("-" * 10)
+    
+                postingList = self.news.get(elemento)
+                print("#" + str(i))
+                print("Score: " + str(self.distCos[elemento]))
+                print(elemento)
+                print("Date: " + postingList[1])
+                print("Title: " + postingList[0])
+                print("Keywords: " + postingList[2])
+                if self.show_snippet:
+                    print("Summary: " + postingList[3])
 
-            #print("-" * 10)
-            i += 1
-            if self.show_all == False and i > 100:
-                break
-        print("=" * 20)
+                #print("-" * 10)
+                i += 1
+                if self.show_all == False and i > 100:
+                    break
+            print("=" * 20)
+            
 
     def snippet(self, noticiaID, query):
 
@@ -1022,14 +1046,19 @@ class SAR_Project:
         for vector in vectorDocs:
             disCos.append(distanciaCos(vector, vectorQuery[0]))
 
+            
+        i = 0
+        for idNew in result:
+            self.distCos[idNew] = disCos[i]
+            i+=1
 
-        indices = np.array(disCos)
-        indices = np.argsort(indices)
+        indices = geek.array(disCos)
+        indices = geek.argsort(indices)
         indices = indices[::-1]
+
 
         res = []
         for i in indices:
-            res.append(result[indices[i]])
+            res.append(result[i])
 
-        print(res)
-        return [res]
+        return res
