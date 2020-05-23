@@ -11,7 +11,7 @@ import pickle
 import random
 import sys
 import math
-
+import numpy as geek
 
 class SAR_Project:
     """
@@ -75,7 +75,8 @@ class SAR_Project:
         self.sarticle = {} # diccionario para almacenar los tokens de article
         self.ssummary = {} # diccionario para almacenar los tokens de summary
         self.articulos = {} #diccionario de articulos para cada noticia
-
+        self.distCos = {} #diccionario distancias coseno
+        
         self.idDoc = 0
         self.idNew = 0
 
@@ -185,6 +186,7 @@ class SAR_Project:
             ##################ARTICLE################################################
             tokens = self.tokenize(noticia['article'])
             self.articulos[self.idNew] = noticia['article']
+            self.distCos[self.idNew] = 0
             numToken = 0
             for token in tokens:
                 tokenAux = token
@@ -510,7 +512,7 @@ class SAR_Project:
             else:
                 print("PERMUTERMS:" + str(len(self.ptindex)))
                 print("-" * 40)
-
+        
         if self.stemming == True:
             self.make_stemming()
             if self.multifield == True:
@@ -530,7 +532,7 @@ class SAR_Project:
         else:
             print("Positional queries are NOT allowed.")
         print("=" * 40)
-
+        
 
     ###################################
     ###                             ###
@@ -549,8 +551,8 @@ class SAR_Project:
         return: posting list con el resultado de la query
         """
         #hay que borrarlo
-        self.make_permuterm()
-        
+        #self.make_permuterm()
+        print(self.ptindex)
 
         res = []
         listaPosting = []
@@ -766,9 +768,12 @@ class SAR_Project:
         """
 
         stem = self.stemmer.stem(term)
-        #self.make_stemming()
+        palabras = self.sindex[stem]
+        postingList = []
+        for termino in palabras:
+            postingList.append(solve_query(term))
 
-        return self.sindex.get(stem)
+        return postingList
 
 
 
@@ -808,8 +813,6 @@ class SAR_Project:
         return self.ptindex.get(aux)
 
 
-
-
     def reverse_posting(self, p):
         """
         NECESARIO PARA TODAS LAS VERSIONES
@@ -827,8 +830,6 @@ class SAR_Project:
             if i in claves:
                 poped.append(i)
                 copiaDic.pop(i)
-        #print("LAS QUE SE HAN BORRADO SON:")
-        #print(poped)
 
         return list(copiaDic.keys())
 
@@ -949,43 +950,88 @@ class SAR_Project:
         print("Number of results: " + str(len(result)))
 
         i = 1
-        for elemento in result:
-            if i != 1:
-                print("-" * 10)
+        if self.use_ranking:
+            for elemento in ranking:
+                if i != 1:
+                    print("-" * 10)
+    
+                postingList = self.news.get(elemento)
+                print("#" + str(i))
+                print("Score: " + str(self.distCos[elemento]))
+                print(elemento)
+                print("Date: " + postingList[1])
+                print("Title: " + postingList[0])
+                print("Keywords: " + postingList[2])
+                if self.show_snippet:
+                    print("Snippet: " + str(self.snippet(elemento, query)))
 
-            postingList = self.news.get(elemento)
-            print("#" + str(i))
-            print("Score: " + str(0))
-            print(elemento)
-            print("Date: " + postingList[1])
-            print("Title: " + postingList[0])
-            print("Keywords: " + postingList[2])
-            if self.show_snippet:
-                print("Summary: " + postingList[3])
+                #print("-" * 10)
+                i += 1
+                if self.show_all == False and i > 100:
+                    break
+            print("=" * 20)
+        else:
+            for elemento in result:
+                if i != 1:
+                    print("-" * 10)
+    
+                postingList = self.news.get(elemento)
+                print("#" + str(i))
+                print("Score: " + str(self.distCos[elemento]))
+                print(elemento)
+                print("Date: " + postingList[1])
+                print("Title: " + postingList[0])
+                print("Keywords: " + postingList[2])
+                if self.show_snippet:
+                    print("Snippet: " + str(self.snippet(elemento, query)))
 
-            #print("-" * 10)
-            i += 1
-            if self.show_all == False and i > 100:
-                break
-        print("=" * 20)
+                #print("-" * 10)
+                i += 1
+                if self.show_all == False and i > 100:
+                    break
+            print("=" * 20)
+            
 
     def snippet(self, noticiaID, query):
 
-        path = self.docs[noticiaID]
-        miNoticia = self.news[noticiaID]
-        target = None
-        tokens = []
+        miNoticia = self.articulos[noticiaID]
+        tokens = query.split()            
+        
+        palabras = miNoticia.replace(',', '').replace('.', '').replace(':', '').replace(';', '').split()
+        
+        indice = 0
+        min = 0
+        for x in range(0,len(palabras)):
+            if palabras[x] in tokens:
+                min = indice
+                break
+            indice+=1
 
-        for token in query:
-            if token != 'AND' and token != 'OR' and token != 'NOT':
-                tokens.append(token)
+        max = 0
+        indice = 0
+        for x in range(0,len(palabras)):
+            if palabras[(len(palabras) - x -1)] in tokens:
+                max = len(palabras) - indice -1
+                break
+            indice+=1
 
-        with open(path) as fh:
-            jlist = json.load(fh)
-            for noticia in jlist:
-                if(noticia['title'] == miNoticia[0] and noticia['date'] == miNoticia):
-                    target = noticia
-                    break
+        margenMin = 0
+        margenMax = 0
+            
+        if (min - 5) > (-1):
+            margenMin = min - 5
+        else:
+            margenMin = 0
+        if max + 5 < len(palabras):
+            margenMax = max + 5
+        else:
+            margenMax = len(palabras)
+
+        resultado = miNoticia.split()
+        resultado = resultado[margenMin:margenMax]
+        resultado = " ".join(resultado)
+                
+        return resultado
 
     def rank_result(self, result, query):
         """
@@ -1022,14 +1068,19 @@ class SAR_Project:
         for vector in vectorDocs:
             disCos.append(distanciaCos(vector, vectorQuery[0]))
 
+            
+        i = 0
+        for idNew in result:
+            self.distCos[idNew] = disCos[i]
+            i+=1
 
-        indices = np.array(disCos)
-        indices = np.argsort(indices)
+        indices = geek.array(disCos)
+        indices = geek.argsort(indices)
         indices = indices[::-1]
+
 
         res = []
         for i in indices:
-            res.append(result[indices[i]])
+            res.append(result[i])
 
-        print(res)
-        return [res]
+        return res
