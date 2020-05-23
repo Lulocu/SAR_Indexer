@@ -77,7 +77,7 @@ class SAR_Project:
         self.ssummary = {} # diccionario para almacenar los tokens de summary
         self.articulos = {} #diccionario de articulos para cada noticia
         self.distCos = {} #diccionario distancias coseno
-        
+
         self.idDoc = 0
         self.idNew = 0
 
@@ -291,7 +291,7 @@ class SAR_Project:
                     aux.append([self.idDoc,self.idNew,numToken])
                     self.dates[dateAux] = aux
 
-            
+
 
 
             self.idNew += 1
@@ -335,7 +335,7 @@ class SAR_Project:
         if self.multifield:
             for token in self.title.keys():
                 stem = self.stemmer.stem(token)
-                
+
                 if self.stitle.get(stem) == None:
                     self.stitle[stem] = [token]
                 else:
@@ -392,11 +392,6 @@ class SAR_Project:
         for token in self.index.keys():
             aux = token + '$'
 
-            #for i in range(len(aux))
-            #    aux = aux[-1] + aux[0:-1]
-
-
-
             for i in range(len(aux)):
                 aux = aux[1:] + aux[0]
                 if self.ptindex.get(aux) == None:
@@ -405,7 +400,7 @@ class SAR_Project:
                     aux2 = self.ptindex.get(aux)
                     aux2.append(token)
                     self.ptindex[aux] = aux2
-        #estaba permuterm
+
         if self.multifield == True:
             for token in self.title.keys():
                 aux = token + '$'
@@ -471,7 +466,7 @@ class SAR_Project:
                         aux2 = self.ptsummary.get(aux)
                         aux2.append(token)
                         self.ptsummary[aux] = aux2
-        
+
 
 
 
@@ -518,7 +513,7 @@ class SAR_Project:
             else:
                 print("PERMUTERMS:" + str(len(self.ptindex)))
                 print("-" * 40)
-        
+
         if self.stemming == True:
             #self.make_stemming()
             if self.multifield == True:
@@ -538,7 +533,7 @@ class SAR_Project:
         else:
             print("Positional queries are NOT allowed.")
         print("=" * 40)
-        
+
 
     ###################################
     ###                             ###
@@ -556,9 +551,6 @@ class SAR_Project:
                 "prev": incluido por si se quiere hacer una version recursiva. No es necesario utilizarlo.
         return: posting list con el resultado de la query
         """
-        #hay que borrarlo
-        #self.make_permuterm()
-        print(self.ptindex)
 
         res = []
         listaPosting = []
@@ -705,7 +697,7 @@ class SAR_Project:
 
         if self.use_stemming:
             return self.get_stemming(term)
-        
+
         if term[0][0] == '"':
             return self.get_positionals(term)
 
@@ -747,7 +739,7 @@ class SAR_Project:
                 listaAnd = list(dicNoticias[llave].keys())
             else:
                 #dicNoticias[llave][idnews]
-                listaAnd = self.and_posting(listaAnd,list(dicNoticias[llave].keys())) 
+                listaAnd = self.and_posting(listaAnd,list(dicNoticias[llave].keys()))
 
         res = []
         #En listaAnd tengo una posting list con idmNews de las noticias que contienen todas las palabras
@@ -784,7 +776,7 @@ class SAR_Project:
             posting = list(set().union(posting,añadir))
 
         posting.sort()
-             
+
         return posting
 
 
@@ -798,26 +790,32 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
+        arrayIDNews = []
         aux = term + '$'
-
-        #i = 0
-        #for i in range(len(aux)):
-        #    if aux[i] != '?' and aux[i] != '*':
-        #        aux = aux[1:] + aux[0]
-        #    else:
-        #        aux = aux[1:] + aux[0]
-        #        break
-        #aux = aux[1:]
 
         alFinal = False
         while not alFinal:
-            #print(aux)
             if aux[-1] == '?' or aux[-1] == '*':
                 alFinal = True
             else:
                 aux = aux[-1] + aux[0:-1]
+        aux=aux[0:len(aux)-1]
 
-        return self.ptindex.get(aux)
+        vector = aux.split("$")
+        comienzo = vector[1]
+        final = vector[0]
+
+        print(vector, comienzo, final)
+
+        for elemento in self.index.keys():
+            if elemento.endswith(final):
+                if elemento.startswith(comienzo):
+                    print(elemento)
+                    arrayIDNews.append(self.get_posting(elemento))
+
+        flattened_arrayIDNews = [y for x in arrayIDNews for y in x]
+        print(flattened_arrayIDNews)
+        return flattened_arrayIDNews
 
 
     def reverse_posting(self, p):
@@ -961,7 +959,7 @@ class SAR_Project:
             for elemento in ranking:
                 if i != 1:
                     print("-" * 10)
-    
+
                 postingList = self.news.get(elemento)
                 print("#" + str(i))
                 print("Score: " + str(self.distCos[elemento]))
@@ -981,7 +979,7 @@ class SAR_Project:
             for elemento in result:
                 if i != 1:
                     print("-" * 10)
-    
+
                 postingList = self.news.get(elemento)
                 print("#" + str(i))
                 print("Score: " + str(self.distCos[elemento]))
@@ -997,15 +995,15 @@ class SAR_Project:
                 if self.show_all == False and i > 100:
                     break
             print("=" * 20)
-            
+
 
     def snippet(self, noticiaID, query):
 
         miNoticia = self.articulos[noticiaID]
-        tokens = query.split()            
-        
+        tokens = query.split()
+
         palabras = miNoticia.replace(',', '').replace('.', '').replace(':', '').replace(';', '').split()
-        
+
         indice = 0
         min = 0
         for x in range(0,len(palabras)):
@@ -1024,7 +1022,7 @@ class SAR_Project:
 
         margenMin = 0
         margenMax = 0
-            
+
         if (min - 5) > (-1):
             margenMin = min - 5
         else:
@@ -1037,7 +1035,7 @@ class SAR_Project:
         resultado = miNoticia.split()
         resultado = resultado[margenMin:margenMax]
         resultado = " ".join(resultado)
-                
+
         return resultado
 
     def rank_result(self, result, query):
@@ -1075,7 +1073,7 @@ class SAR_Project:
         for vector in vectorDocs:
             disCos.append(distanciaCos(vector, vectorQuery[0]))
 
-            
+
         i = 0
         for idNew in result:
             self.distCos[idNew] = disCos[i]
