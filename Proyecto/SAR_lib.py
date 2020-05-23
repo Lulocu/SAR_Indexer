@@ -768,9 +768,12 @@ class SAR_Project:
         """
 
         stem = self.stemmer.stem(term)
-        #self.make_stemming()
+        palabras = self.sindex[stem]
+        postingList = []
+        for termino in palabras:
+            postingList.append(solve_query(term))
 
-        return self.sindex.get(stem)
+        return postingList
 
 
 
