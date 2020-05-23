@@ -703,7 +703,9 @@ class SAR_Project:
             #print("HOLAAAA " + term)
             return self.get_permuterm(term)
 
-        #self.get_stemming(term)
+        if self.use_stemming:
+            return self.get_stemming(term)
+        
         if term[0][0] == '"':
             return self.get_positionals(term)
 
