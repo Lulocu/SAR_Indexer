@@ -718,7 +718,6 @@ class SAR_Project:
             else:
                 #dicNoticias[llave][idnews]
                 listaAnd = self.and_posting(listaAnd,list(dicNoticias[llave].keys()))
-        
         res = []
         #En listaAnd tengo una posting list con idmNews de las noticias que contienen todas las palabras
         for documento in listaAnd:
@@ -750,7 +749,6 @@ class SAR_Project:
 
 
         for termino in palabras:
-            #postingList.append(self.solve_query(term))
             añadir = [item[1] for item in self.index[termino]]
             for i in añadir:
                 if i not in posting:
