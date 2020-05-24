@@ -773,7 +773,9 @@ class SAR_Project:
 
         for termino in palabras:
             añadir = [item[1] for item in self.index[termino]]
-            posting = list(set().union(posting,añadir))
+            for i in añadir:
+                if i not in posting:
+                    posting.append(i)
 
         posting.sort()
 
