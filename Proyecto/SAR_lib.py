@@ -556,9 +556,7 @@ class SAR_Project:
                 "prev": incluido por si se quiere hacer una version recursiva. No es necesario utilizarlo.
         return: posting list con el resultado de la query
         """
-        #hay que borrarlo
-        #self.make_permuterm()
-        print(self.ptindex)
+        print('-'*50)
 
         res = []
         listaPosting = []
@@ -779,7 +777,7 @@ class SAR_Project:
         palabras = self.sindex[stem]
         postingList = []
         for termino in palabras:
-            postingList.append(solve_query(term))
+            postingList.append(self.solve_query(term))
 
         return postingList
 
