@@ -77,7 +77,7 @@ class SAR_Project:
         self.ssummary = {} # diccionario para almacenar los tokens de summary
         self.articulos = {} #diccionario de articulos para cada noticia
         self.distCos = {} #diccionario distancias coseno
-        
+
         self.idDoc = 0
         self.idNew = 0
 
@@ -143,22 +143,18 @@ class SAR_Project:
         Recorre recursivamente el directorio "root"  y indexa su contenido
         los argumentos adicionales "**args" solo son necesarios para las funcionalidades ampliadas
         """
-        #print("ARGUMENTOS:" + str(args) )
         self.multifield = args['multifield']
         self.positional = args['positional']
         self.stemming = args['stem']
         self.permuterm = args['permuterm']
 
         for dir, subdirs, files in os.walk(root):
-            #print("DIR:" + dir)
             for filename in files:
                 if filename.endswith('.json'):
                     fullname = os.path.join(dir, filename)
                     self.index_file(fullname)
         self.make_stemming()
         self.make_permuterm()
-        #print(self.idDoc)
-        #print('Llamada a  permuterm')
 
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
@@ -175,7 +171,6 @@ class SAR_Project:
         input: "filename" es el nombre de un fichero en formato JSON Arrays (https://www.w3schools.com/js/js_json_arrays.asp).
                 Una vez parseado con json.load tendremos una lista de diccionarios, cada diccionario se corresponde a una noticia
         """
-        #print("Nombre fichero: " + filename)
         with open(filename) as fh:
             jlist = json.load(fh)
 
@@ -185,7 +180,7 @@ class SAR_Project:
         #      "title", "date", "keywords", "article", "summary"
         #
         # En la version basica solo se debe indexar el contenido "article"
-        #print("SE VA A INTRODUCIR TODOS LOS TOKEN EN index")
+
         self.docs[self.idDoc] = filename
         for noticia in jlist:
 
@@ -272,13 +267,6 @@ class SAR_Project:
             ##################DATE################################################
                 dateAux = "date:" + noticia["date"]
 
-                """
-                print(dateAux)
-                if self.dates.get(noticia["date"]) == None:
-                    self.dates[noticia["date"]] = 1
-                else:
-                    self.dates[noticia["date"]] = self.dates.get(noticia["date"]) + 1
-                """
                 if self.index.get(dateAux) == None:
                     self.index[dateAux] = [[self.idDoc,self.idNew,numToken]] #numtoken  -> -1
                     self.dates[dateAux] = [[self.idDoc,self.idNew,numToken]]
@@ -291,16 +279,9 @@ class SAR_Project:
                     aux.append([self.idDoc,self.idNew,numToken])
                     self.dates[dateAux] = aux
 
-            
-
-
             self.idNew += 1
         self.idDoc += 1
 
-
-        #print("SE VA A INTRODUCIR TODOS LOS TOKEN PERMUTERM EN ptindex")
-        #print(self.index)
-        #print(len(self.title))
 
 
 
@@ -335,7 +316,7 @@ class SAR_Project:
         if self.multifield:
             for token in self.title.keys():
                 stem = self.stemmer.stem(token)
-                
+
                 if self.stitle.get(stem) == None:
                     self.stitle[stem] = [token]
                 else:
@@ -392,11 +373,6 @@ class SAR_Project:
         for token in self.index.keys():
             aux = token + '$'
 
-            #for i in range(len(aux))
-            #    aux = aux[-1] + aux[0:-1]
-
-
-
             for i in range(len(aux)):
                 aux = aux[1:] + aux[0]
                 if self.ptindex.get(aux) == None:
@@ -405,7 +381,7 @@ class SAR_Project:
                     aux2 = self.ptindex.get(aux)
                     aux2.append(token)
                     self.ptindex[aux] = aux2
-        #estaba permuterm
+
         if self.multifield == True:
             for token in self.title.keys():
                 aux = token + '$'
@@ -419,7 +395,6 @@ class SAR_Project:
                         aux2 = self.pttitle.get(aux)
                         aux2.append(token)
                         self.pttitle[aux] = aux2
-            #print('1'*50)
             for token in self.dates.keys():
                 aux = token + '$'
 
@@ -432,7 +407,7 @@ class SAR_Project:
                         aux2 = self.ptdates.get(aux)
                         aux2.append(token)
                         self.ptdates[aux] = aux2
-            #print('2'*50)
+
             for token in self.keywords.keys():
                 aux = token + '$'
 
@@ -445,7 +420,7 @@ class SAR_Project:
                         aux2 = self.ptkeywords.get(aux)
                         aux2.append(token)
                         self.ptkeywords[aux] = aux2
-            #print('3'*50)
+
             for token in self.article.keys():
                 aux = token + '$'
 
@@ -458,7 +433,7 @@ class SAR_Project:
                         aux2 = self.ptarticle.get(aux)
                         aux2.append(token)
                         self.ptarticle[aux] = aux2
-            #print('4'*50)
+
             for token in self.summary.keys():
                 aux = token + '$'
 
@@ -471,7 +446,7 @@ class SAR_Project:
                         aux2 = self.ptsummary.get(aux)
                         aux2.append(token)
                         self.ptsummary[aux] = aux2
-        
+
 
 
 
@@ -505,8 +480,7 @@ class SAR_Project:
             print("-" * 40)
 
         if self.permuterm == True:
-            #self.make_permuterm()
-            #print(self.ptindex)
+
             if self.multifield == True:
                 print("PERMUTERMS:")
                 print("\t# permuterms in 'title': " + str(len(self.pttitle)))
@@ -518,9 +492,8 @@ class SAR_Project:
             else:
                 print("PERMUTERMS:" + str(len(self.ptindex)))
                 print("-" * 40)
-        
+
         if self.stemming == True:
-            #self.make_stemming()
             if self.multifield == True:
                 print("STEMS:")
                 print("\t# stems in 'title': " + str(len(self.stitle)))
@@ -538,7 +511,7 @@ class SAR_Project:
         else:
             print("Positional queries are NOT allowed.")
         print("=" * 40)
-        
+
 
     ###################################
     ###                             ###
@@ -556,7 +529,6 @@ class SAR_Project:
                 "prev": incluido por si se quiere hacer una version recursiva. No es necesario utilizarlo.
         return: posting list con el resultado de la query
         """
-        print('-'*50)
 
         res = []
         listaPosting = []
@@ -567,7 +539,7 @@ class SAR_Project:
 
         consultaPartes = query.split()
 
-        #print("Consulta partes: ",consultaPartes)
+
 
         j = 0
 
@@ -643,7 +615,7 @@ class SAR_Project:
                 listaPosting.append(self.get_posting(palabra))
             j = j + 1
 
-        #print(listaPosting)
+
         #En listaPosting tenemos todas las posting list y los operadores binarios
         if listaPosting[0] == 'NOT':
             res = self.reverse_posting(listaPosting[1])
@@ -694,16 +666,13 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
-        #print("HOLAAAAA")
-        #print(self.ptindex)
 
         if "*" in term or "?" in term:
-            #print("HOLAAAA " + term)
             return self.get_permuterm(term)
 
         if self.use_stemming:
             return self.get_stemming(term)
-        
+
         if term[0][0] == '"':
             return self.get_positionals(term)
 
@@ -729,8 +698,10 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
+        
 
         terms = [terms[0][1:]] + terms[1:-1] + [terms[-1][0:-1]]
+    
         dicNoticias = {}
         for palabra in terms:
             if palabra not in dicNoticias.keys():
@@ -739,14 +710,15 @@ class SAR_Project:
                     dicNoticias[palabra][aux[1]] = dicNoticias[palabra].get(aux[1],[])
                     dicNoticias[palabra][aux[1]].append(aux[2])
 
+
         listaAnd = []
         for llave in dicNoticias.keys():
             if listaAnd == []:
                 listaAnd = list(dicNoticias[llave].keys())
             else:
                 #dicNoticias[llave][idnews]
-                listaAnd = self.and_posting(listaAnd,list(dicNoticias[llave].keys())) 
-
+                listaAnd = self.and_posting(listaAnd,list(dicNoticias[llave].keys()))
+        
         res = []
         #En listaAnd tengo una posting list con idmNews de las noticias que contienen todas las palabras
         for documento in listaAnd:
@@ -772,14 +744,21 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
-
         stem = self.stemmer.stem(term)
         palabras = self.sindex[stem]
-        postingList = []
-        for termino in palabras:
-            postingList.append(self.solve_query(term))
+        posting = []
 
-        return postingList
+
+        for termino in palabras:
+            #postingList.append(self.solve_query(term))
+            añadir = [item[1] for item in self.index[termino]]
+            for i in añadir:
+                if i not in posting:
+                    posting.append(i)
+
+        posting.sort()
+
+        return posting
 
 
 
@@ -792,26 +771,29 @@ class SAR_Project:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
         return: posting list
         """
+        arrayIDNews = []
         aux = term + '$'
-
-        #i = 0
-        #for i in range(len(aux)):
-        #    if aux[i] != '?' and aux[i] != '*':
-        #        aux = aux[1:] + aux[0]
-        #    else:
-        #        aux = aux[1:] + aux[0]
-        #        break
-        #aux = aux[1:]
 
         alFinal = False
         while not alFinal:
-            #print(aux)
             if aux[-1] == '?' or aux[-1] == '*':
                 alFinal = True
             else:
                 aux = aux[-1] + aux[0:-1]
+        aux=aux[0:len(aux)-1]
 
-        return self.ptindex.get(aux)
+        vector = aux.split("$")
+        comienzo = vector[1]
+        final = vector[0]
+
+
+        for elemento in self.index.keys():
+            if elemento.endswith(final):
+                if elemento.startswith(comienzo):
+                    arrayIDNews.append(self.get_posting(elemento))
+
+        flattened_arrayIDNews = [y for x in arrayIDNews for y in x]
+        return flattened_arrayIDNews
 
 
     def reverse_posting(self, p):
@@ -924,8 +906,7 @@ class SAR_Project:
         return: el numero de noticias recuperadas, para la opcion -T
         """
         result = self.solve_query(query)
-        #print("RESULTADO")
-        #print(result)
+
         print("%s\t%d" % (query, len(result)))
         return len(result)  # para verificar los resultados (op: -T)
 
@@ -955,7 +936,7 @@ class SAR_Project:
             for elemento in ranking:
                 if i != 1:
                     print("-" * 10)
-    
+
                 postingList = self.news.get(elemento)
                 print("#" + str(i))
                 print("Score: " + str(self.distCos[elemento]))
@@ -965,8 +946,6 @@ class SAR_Project:
                 print("Keywords: " + postingList[2])
                 if self.show_snippet:
                     print("Snippet: " + str(self.snippet(elemento, query)))
-
-                #print("-" * 10)
                 i += 1
                 if self.show_all == False and i > 100:
                     break
@@ -975,7 +954,7 @@ class SAR_Project:
             for elemento in result:
                 if i != 1:
                     print("-" * 10)
-    
+
                 postingList = self.news.get(elemento)
                 print("#" + str(i))
                 print("Score: " + str(self.distCos[elemento]))
@@ -986,20 +965,19 @@ class SAR_Project:
                 if self.show_snippet:
                     print("Snippet: " + str(self.snippet(elemento, query)))
 
-                #print("-" * 10)
                 i += 1
                 if self.show_all == False and i > 100:
                     break
             print("=" * 20)
-            
+
 
     def snippet(self, noticiaID, query):
 
         miNoticia = self.articulos[noticiaID]
-        tokens = query.split()            
-        
+        tokens = query.split()
+
         palabras = miNoticia.replace(',', '').replace('.', '').replace(':', '').replace(';', '').split()
-        
+
         indice = 0
         min = 0
         for x in range(0,len(palabras)):
@@ -1018,7 +996,7 @@ class SAR_Project:
 
         margenMin = 0
         margenMax = 0
-            
+
         if (min - 5) > (-1):
             margenMin = min - 5
         else:
@@ -1031,7 +1009,7 @@ class SAR_Project:
         resultado = miNoticia.split()
         resultado = resultado[margenMin:margenMax]
         resultado = " ".join(resultado)
-                
+
         return resultado
 
     def rank_result(self, result, query):
@@ -1062,14 +1040,11 @@ class SAR_Project:
         #Frequencias de documentos y queries
         vectorDocs = vectorizer.fit_transform(doc).toarray()
         vectorQuery = vectorizer.transform(queryArray).toarray()
-        #transformer.fit(vectorQuery)
-        #idfVectorQuery = transformer.transform(vectorQuery)
-        #print idfVectorQuery.todense()
 
         for vector in vectorDocs:
             disCos.append(distanciaCos(vector, vectorQuery[0]))
 
-            
+
         i = 0
         for idNew in result:
             self.distCos[idNew] = disCos[i]
